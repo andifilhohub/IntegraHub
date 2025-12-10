@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntegraHub - Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .success {
+            color: #10b981;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .info {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .warning {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-card">
+        <h1>✅ IntegraHub está funcionando!</h1>
+        
+        <p class="success">Sistema Operacional</p>
+        
+        <div class="info">
+            <h3>🌐 Acesso ao Sistema:</h3>
+            <ul>
+                <li><strong>Login:</strong> <a href="/login.html">/login.html</a></li>
+                <li><strong>Dashboard:</strong> <a href="/dashboard.html">/dashboard.html</a></li>
+                <li><strong>API Docs:</strong> <a href="/docs">/docs</a></li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>⚠️ Importante:</h3>
+            <p><strong>Use HTTP (não HTTPS):</strong></p>
+            <p>O SSL ainda não foi configurado. Acesse via:</p>
+            <p><code>http://integrahub.geniuscloud.com.br</code></p>
+            <p>NÃO use: <s>https://</s></p>
+        </div>
+        
+        <div class="info">
+            <h3>🔧 Status dos Serviços:</h3>
+            <ul>
+                <li>✅ NestJS Backend - Porta 3002</li>
+                <li>✅ Nginx Proxy - Porta 80</li>
+                <li>✅ Frontend (HTML/CSS/JS)</li>
+                <li>✅ API REST (/v1/*)</li>
+                <li>❌ SSL/HTTPS (não configurado)</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>📝 Próximos Passos:</h3>
+            <ol>
+                <li>Acesse <a href="/login.html">http://integrahub.geniuscloud.com.br/login.html</a></li>
+                <li>Use a chave INOVA_SECRET para fazer login</li>
+                <li>Navegue pelo dashboard</li>
+            </ol>
+        </div>
+        
+        <p style="text-align: center; margin-top: 40px; color: #666;">
+            <small>IntegraHub © 2025 - v1.0.0</small>
+        </p>
+    </div>
+    
+    <script>
+        // Auto-detect protocol
+        if (window.location.protocol === 'https:') {
+            const warning = document.createElement('div');
+            warning.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: white; padding: 15px; text-align: center; z-index: 9999;';
+            warning.innerHTML = '<strong>⚠️ ATENÇÃO:</strong> Você está usando HTTPS. Redirecione para HTTP: <a href="http://' + window.location.host + window.location.pathname + '" style="color: white; text-decoration: underline;">Clique aqui</a>';
+            document.body.insertBefore(warning, document.body.firstChild);
+        }
+    </script>
+</body>
+</html>

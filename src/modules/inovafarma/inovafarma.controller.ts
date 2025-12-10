@@ -1,8 +1,9 @@
-import { Body, Controller, Headers, ParseArrayPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, Post, UseGuards } from '@nestjs/common';
 import { HmacGuard } from '../auth/hmac.guard';
 import { IngestProductDto } from './dto/ingest-product.dto';
 import { InovafarmaService } from './inovafarma.service';
 import { LoadType } from './dto/process-products-job.dto';
+import { normalizeInovafarmaPayload } from './inovafarma.normalizer';
 
 @Controller('inovafarma')
 export class InovafarmaController {
@@ -11,7 +12,7 @@ export class InovafarmaController {
   @Post('products')
   @UseGuards(HmacGuard)
   async emitProducts(
-    @Body(new ParseArrayPipe({ items: IngestProductDto })) products: IngestProductDto[],
+    @Body() rawProducts: unknown[],
     @Headers('x-inova-load-type') rawLoadType?: string | string[],
   ) {
     const headerValue =
@@ -22,6 +23,7 @@ export class InovafarmaController {
         : undefined;
     const normalizedLoadType = headerValue?.toLowerCase();
     const loadType: LoadType = normalizedLoadType === 'full' ? 'full' : 'delta';
+    const products = normalizeInovafarmaPayload(rawProducts);
     return this.inovafarmaService.ingest(products, loadType);
   }
 }

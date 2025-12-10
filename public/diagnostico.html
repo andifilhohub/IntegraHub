@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>TESTE - IntegraHub vs Evolution</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #111;
+            border: 3px solid #0f0;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #0f0;
+        }
+        h1 {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+        .status {
+            background: #1a1a1a;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #0f0;
+        }
+        .success {
+            border-left-color: #0f0;
+        }
+        .error {
+            border-left-color: #f00;
+            color: #f00;
+        }
+        .info {
+            background: #0a3a0a;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        code {
+            background: #000;
+            padding: 2px 8px;
+            border-radius: 3px;
+            color: #ff0;
+        }
+        .timestamp {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+        }
+        a {
+            color: #0ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .big-success {
+            font-size: 48px;
+            text-align: center;
+            color: #0f0;
+            margin: 30px 0;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DIAGNÓSTICO INTEGRAHUB</h1>
+        
+        <div class="big-success">✅ ESTE É O INTEGRAHUB!</div>
+        
+        <div class="status success">
+            <h2>✅ Status do Servidor</h2>
+            <p>Você está vendo o <strong>INTEGRAHUB</strong>, NÃO a Evolution API!</p>
+        </div>
+        
+        <div class="info">
+            <h3>📋 Informações Técnicas:</h3>
+            <ul style="list-style: none; padding-left: 20px;">
+                <li>🌐 Domínio: <code id="domain"></code></li>
+                <li>📡 Protocolo: <code id="protocol"></code></li>
+                <li>🔗 URL Completa: <code id="fullurl"></code></li>
+                <li>⏰ Carregado em: <code id="timestamp"></code></li>
+                <li>🔄 Cache: <code>DISABLED</code></li>
+            </ul>
+        </div>
+        
+        <div class="status success">
+            <h3>🎯 Confirmação:</h3>
+            <p>Se você está vendo esta página em verde com fundo preto:</p>
+            <p><strong>✅ SERVIDOR FUNCIONANDO CORRETAMENTE!</strong></p>
+        </div>
+        
+        <div class="info">
+            <h3>⚠️ Se você ainda vê a Evolution:</h3>
+            <ol style="padding-left: 40px;">
+                <li>Aperte <strong>CTRL + SHIFT + DELETE</strong></li>
+                <li>Limpe <strong>Cache e Cookies</strong></li>
+                <li>Feche TODAS as abas do navegador</li>
+                <li>Abra novamente e acesse esta URL</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>🔗 Links para Testar:</h3>
+            <ul style="list-style: none; padding-left: 20px;">
+                <li>→ <a href="/login.html">Ir para Login</a></li>
+                <li>→ <a href="/dashboard.html">Ir para Dashboard</a></li>
+                <li>→ <a href="/test.html?v=<?php echo time(); ?>">Página de Teste</a></li>
+                <li>→ <a href="/docs">API Docs (Swagger)</a></li>
+            </ul>
+        </div>
+        
+        <div class="status error" id="evolution-check" style="display: none;">
+            <h3>❌ ATENÇÃO!</h3>
+            <p>Detectamos que você pode estar com cache da Evolution.</p>
+            <p>Limpe o cache do navegador agora!</p>
+        </div>
+        
+        <div class="timestamp">
+            Última atualização: <span id="lastupdate"></span><br>
+            Versão do Teste: v1.0.0-nocache
+        </div>
+    </div>
+    
+    <script>
+        // Preencher informações
+        document.getElementById('domain').textContent = window.location.hostname;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('fullurl').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('pt-BR');
+        document.getElementById('lastupdate').textContent = new Date().toLocaleString('pt-BR');
+        
+        // Verificar se há indicios de Evolution no localStorage
+        const keys = Object.keys(localStorage);
+        if (keys.some(k => k.toLowerCase().includes('evolution'))) {
+            document.getElementById('evolution-check').style.display = 'block';
+            console.warn('⚠️ Detectado cache da Evolution no localStorage!');
+        }
+        
+        // Log no console
+        console.log('%c✅ INTEGRAHUB FUNCIONANDO!', 'color: #0f0; font-size: 24px; font-weight: bold;');
+        console.log('%cSe você vê a Evolution, limpe o cache!', 'color: #ff0; font-size: 16px;');
+        
+        // Detectar se veio de cache
+        if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+            console.log('%c🔄 Página recarregada', 'color: #0ff');
+        }
+        if (performance.navigation.type === performance.navigation.TYPE_BACK_FORWARD) {
+            console.log('%c⬅️ Voltou no histórico', 'color: #f0f');
+        }
+    </script>
+</body>
+</html>

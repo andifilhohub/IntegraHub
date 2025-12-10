@@ -37,7 +37,6 @@ export class IngestProductDto {
   price?: number;
 
   @IsOptional()
-  @Min(0)
   @IsInt()
   stock?: number;
 

@@ -14,33 +14,31 @@ model Pharmacy {
   state     String?
   city      String?
   rawJson   Json
-  products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
-  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id])
-  pharmacyId Int
-
-  productId  Int
-  title      String
+  id          Int       @id @default(autoincrement())
+  pharmacyId  Int
+  productId   Int
+  title       String
   description String?
-  ean        String?
-  price      Float?
-  stock      Int?
-  brand      String?
-  ncm        String?
-  category   String?
-  imageLink  String?
-  rawJson    Json
-  isActive   Boolean  @default(true)
-  deletedAt  DateTime?
-  lastSeenAt DateTime?
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  ean         String?
+  price       Float?
+  stock       Int?
+  brand       String?
+  ncm         String?
+  category    String?
+  imageLink   String?
+  rawJson     Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  lastSeenAt  DateTime?
+  pharmacy    Pharmacy  @relation(fields: [pharmacyId], references: [id])
 
   @@unique([pharmacyId, productId], name: "pharmacy_product_unique")
 }

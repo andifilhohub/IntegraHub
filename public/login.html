@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntegraHub - Login</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>IntegraHub</h1>
+                <p>Dashboard de Monitoramento</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="secret">Chave de Acesso (INOVA_SECRET)</label>
+                    <input 
+                        type="password" 
+                        id="secret" 
+                        name="secret" 
+                        placeholder="Digite sua chave de acesso"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+                <div id="error-message" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span id="loginBtnText">Entrar</span>
+                    <span id="loginBtnSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/login.js"></script>
+</body>
+</html>

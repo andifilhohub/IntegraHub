@@ -9,6 +9,8 @@ import { ProductsModule } from './modules/products/products.module';
 import { PharmaciesModule } from './modules/pharmacies/pharmacies.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProcessProductsModule } from './jobs/process-products/process-products.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+// import { RootController } from './root.controller';
 
 @Module({
   imports: [
@@ -17,11 +19,16 @@ import { ProcessProductsModule } from './jobs/process-products/process-products.
       envFilePath: '.env',
       validationSchema: Joi.object({
         PORT: Joi.number().default(3002),
-        DATABASE_URL: Joi.string().uri().required(),
+        DATABASE_URL: Joi.string()
+          .pattern(/^postgres(ql)?:\/\//)
+          .required(),
         INOVA_SECRET: Joi.string().required(),
-        REDIS_URL: Joi.string().uri().required(),
+        REDIS_URL: Joi.string().required(),
         HMAC_TIME_WINDOW_MS: Joi.number().default(300000),
         LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
+        INOVAFARMA_BUFFER_DIR: Joi.string().default('.data/inovafarma-buffer'),
+        INOVAFARMA_BUFFER_BATCH_SIZE: Joi.number().positive().default(25),
+        INOVAFARMA_BUFFER_INTERVAL_MS: Joi.number().positive().default(1000),
       }),
     }),
     LoggerModule.forRootAsync({
@@ -39,6 +46,8 @@ import { ProcessProductsModule } from './jobs/process-products/process-products.
     PharmaciesModule,
     InovafarmaModule,
     ProductsModule,
+    DashboardModule,
   ],
+  controllers: [],
 })
 export class AppModule {}

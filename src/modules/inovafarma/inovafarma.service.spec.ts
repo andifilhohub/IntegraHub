@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { InovafarmaService } from './inovafarma.service';
-import { ProcessProductsQueue } from '../../jobs/process-products/process-products.queue';
 import { IngestProductDto } from './dto/ingest-product.dto';
+import { InovafarmaFileBufferService } from './inovafarma-file-buffer.service';
 
 const createProduct = (cnpj: string): IngestProductDto => ({
   productId: 1,
@@ -11,20 +11,24 @@ const createProduct = (cnpj: string): IngestProductDto => ({
 });
 
 describe('InovafarmaService', () => {
-  const queueMock = { add: jest.fn() } as unknown as ProcessProductsQueue;
-  const service = new InovafarmaService(queueMock);
+  const bufferMock = {
+    buffer: jest.fn(),
+    triggerImmediateDrain: jest.fn(),
+  } as unknown as InovafarmaFileBufferService;
+  const service = new InovafarmaService(bufferMock);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('enfileira um lote válido', async () => {
+    bufferMock.buffer = jest.fn().mockResolvedValue('file-123');
     const result = await service.ingest([createProduct('123')]);
-    expect(queueMock.add).toHaveBeenCalledTimes(1);
-    expect(queueMock.add).toHaveBeenCalledWith(
-      expect.objectContaining({ loadType: 'delta' }),
-    );
+    expect(bufferMock.buffer).toHaveBeenCalledTimes(1);
+    expect(bufferMock.triggerImmediateDrain).toHaveBeenCalledTimes(1);
     expect(result.status).toBe('queued');
+    expect(result.buffered).toBe(true);
+    expect(result.fileId).toBe('file-123');
     expect(result.count).toBe(1);
   });
 

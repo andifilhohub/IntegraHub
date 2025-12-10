@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntegraHub - Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>IntegraHub Dashboard</h1>
+                <button id="logoutBtn" class="btn-secondary">Sair</button>
+            </div>
+        </header>
+
+        <main class="dashboard-main">
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Total de Produtos</h3>
+                    <p class="stat-value" id="totalProducts">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Produtos Ativos</h3>
+                    <p class="stat-value" id="activeProducts">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total de Farmácias</h3>
+                    <p class="stat-value" id="totalPharmacies">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Arquivos no Buffer</h3>
+                    <p class="stat-value" id="bufferFiles">-</p>
+                </div>
+            </section>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="buffer">Arquivos no Buffer</button>
+                <button class="tab-button" data-tab="products">Produtos Processados</button>
+            </div>
+
+            <!-- Buffer Tab -->
+            <section id="buffer-tab" class="tab-content active">
+                <div class="table-header">
+                    <h2>Arquivos no Buffer</h2>
+                    <button id="refreshBuffer" class="btn-secondary">Atualizar</button>
+                </div>
+                <div class="table-container">
+                    <table id="bufferTable">
+                        <thead>
+                            <tr>
+                                <th>Nome do Arquivo</th>
+                                <th>Data de Criação</th>
+                                <th>Tipo de Carga</th>
+                                <th>Quantidade de Produtos</th>
+                                <th>Tamanho</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bufferTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Products Tab -->
+            <section id="products-tab" class="tab-content">
+                <div class="table-header">
+                    <h2>Produtos Processados</h2>
+                    <button id="refreshProducts" class="btn-secondary">Atualizar</button>
+                </div>
+                <div class="table-container">
+                    <table id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Farmácia</th>
+                                <th>Título</th>
+                                <th>EAN</th>
+                                <th>Preço</th>
+                                <th>Estoque</th>
+                                <th>Status</th>
+                                <th>Última Atualização</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr>
+                                <td colspan="8" class="loading">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button id="prevPage" class="btn-secondary" disabled>Anterior</button>
+                    <span id="pageInfo">Página 1</span>
+                    <button id="nextPage" class="btn-secondary">Próxima</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for Buffer File Details -->
+    <div id="bufferModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes do Arquivo</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="bufferDetails"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="/dashboard.js"></script>
+</body>
+</html>

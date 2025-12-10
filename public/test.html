@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IntegraHub TEST - <?php echo time(); ?></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            font-size: 48px;
+            margin: 0 0 20px 0;
+        }
+        .success {
+            color: #10b981;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .time {
+            color: #666;
+            font-size: 14px;
+        }
+        a {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        a:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 INTEGRAHUB</h1>
+        <p class="success">✅ Funcionando Corretamente!</p>
+        <p class="time">Carregado em: <strong id="timestamp"></strong></p>
+        
+        <div class="info">
+            <p><strong>Isto NÃO é Evolution API</strong></p>
+            <p>Você está vendo o IntegraHub! 🚀</p>
+        </div>
+        
+        <a href="/login.html">Ir para Login</a>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('pt-BR');
+        
+        // Force no cache
+        if (performance.navigation.type === 1) {
+            console.log('Page was refreshed');
+        }
+    </script>
+</body>
+</html>

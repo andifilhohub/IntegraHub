@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ProcessProductsQueue } from '../../jobs/process-products/process-products.queue';
 import { IngestProductDto } from './dto/ingest-product.dto';
 import { LoadType, ProcessProductsJobPayload } from './dto/process-products-job.dto';
+import { InovafarmaFileBufferService } from './inovafarma-file-buffer.service';
 
 @Injectable()
 export class InovafarmaService {
-  constructor(private readonly queue: ProcessProductsQueue) {}
+  constructor(private readonly fileBuffer: InovafarmaFileBufferService) {}
 
   async ingest(products: IngestProductDto[], loadType: LoadType = 'delta') {
     if (!products.length) {
@@ -25,7 +25,8 @@ export class InovafarmaService {
       loadType,
     };
 
-    await this.queue.add(payload);
-    return { status: 'queued', count: products.length };
+    const fileId = await this.fileBuffer.buffer(payload);
+    this.fileBuffer.triggerImmediateDrain();
+    return { status: 'queued', buffered: true, fileId, count: products.length };
   }
 }
