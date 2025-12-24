@@ -1,0 +1,43 @@
+{
+  "name": "integrahub",
+  "version": "1.0.0",
+  "description": "High-throughput product ingestion system for InovaFarma",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node src/db/migrate.js",
+    "workers": "node src/workers/orchestrator.js",
+    "worker:chunker": "node src/workers/chunker.js",
+    "worker:upsert": "node src/workers/upsert.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andifilhohub/IntegraHub.git"
+  },
+  "keywords": ["ingestion", "fastify", "kafka", "streaming"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andifilhohub/IntegraHub/issues"
+  },
+  "homepage": "https://github.com/andifilhohub/IntegraHub#readme",
+  "dependencies": {
+    "@fastify/compress": "^7.0.3",
+    "@fastify/cors": "^9.0.1",
+    "fastify": "^4.28.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.12.0",
+    "minio": "^8.0.1",
+    "dotenv": "^16.4.5",
+    "pino": "^9.4.0",
+    "pino-pretty": "^11.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.15.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
