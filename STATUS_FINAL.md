@@ -122,7 +122,7 @@ app.setGlobalPrefix('v1', {
 1. Abra: http://integrahub.geniuscloud.com.br/login.html
    (ou simplesmente http://integrahub.geniuscloud.com.br - redireciona automaticamente)
 
-2. Faça login com a chave `INOVA_SECRET` do arquivo `.env`
+2. Faça login com a chave `INOVA_API_KEY` do arquivo `.env`
 
 3. Navegue pelo dashboard:
    - Veja estatísticas gerais
@@ -137,11 +137,11 @@ app.setGlobalPrefix('v1', {
 
 ## 🔐 Autenticação
 
-Para fazer login no dashboard, use o valor de `INOVA_SECRET` configurado no arquivo `.env`:
+Para fazer login no dashboard, use o valor de `INOVA_API_KEY` configurado no arquivo `.env`:
 
 ```bash
 # Ver o valor (se tiver acesso ao servidor)
-grep INOVA_SECRET /home/IntegraHub/.env
+grep INOVA_API_KEY /home/IntegraHub/.env
 ```
 
 ---

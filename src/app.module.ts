@@ -22,9 +22,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
         DATABASE_URL: Joi.string()
           .pattern(/^postgres(ql)?:\/\//)
           .required(),
-        INOVA_SECRET: Joi.string().required(),
+        INOVA_API_KEY: Joi.string().required(),
         REDIS_URL: Joi.string().required(),
-        HMAC_TIME_WINDOW_MS: Joi.number().default(300000),
         LOG_LEVEL: Joi.string().valid('debug', 'info', 'warn', 'error').default('info'),
         INOVAFARMA_BUFFER_DIR: Joi.string().default('.data/inovafarma-buffer'),
         INOVAFARMA_BUFFER_BATCH_SIZE: Joi.number().positive().default(25),

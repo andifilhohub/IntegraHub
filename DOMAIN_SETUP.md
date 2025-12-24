@@ -144,7 +144,7 @@ services:
       - PORT=3002
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
-      - INOVA_SECRET=${INOVA_SECRET}
+      - INOVA_API_KEY=${INOVA_API_KEY}
     expose:
       - "3002"
     restart: unless-stopped
@@ -197,8 +197,7 @@ Lembre-se de configurar as variáveis de ambiente no servidor:
 PORT=3002
 DATABASE_URL=postgresql://user:password@localhost:5432/integrahub
 REDIS_URL=redis://localhost:6379
-INOVA_SECRET=sua_chave_secreta_aqui
-HMAC_TIME_WINDOW_MS=300000
+INOVA_API_KEY=sua_chave_secreta_aqui
 LOG_LEVEL=info
 INOVAFARMA_BUFFER_DIR=/var/integrahub/buffer
 ```

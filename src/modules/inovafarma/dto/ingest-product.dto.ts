@@ -56,6 +56,46 @@ export class IngestProductDto {
   @IsString()
   imageLink?: string;
 
+  @IsOptional()
+  @IsNumber()
+  shopId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pricePromo?: number;
+
+  @IsOptional()
+  @IsNumber()
+  wholesalePrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  wholesaleMin?: number;
+
+  @IsOptional()
+  @IsNumber()
+  measure?: number;
+
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  productCreatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  productUpdatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  stockUpdatedAt?: string;
+
   @IsObject()
   rawJson: Record<string, unknown>;
 

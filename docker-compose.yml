@@ -31,8 +31,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/integra_hub
       REDIS_URL: redis://redis:6379/0
-      INOVA_SECRET: supersegredo
-      HMAC_TIME_WINDOW_MS: 300000
+      INOVA_API_KEY: supersegredo
       LOG_LEVEL: info
     command: npm run start:prod
 
@@ -47,8 +46,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/integra_hub
       REDIS_URL: redis://redis:6379/0
-      INOVA_SECRET: supersegredo
-      HMAC_TIME_WINDOW_MS: 300000
+      INOVA_API_KEY: supersegredo
       LOG_LEVEL: info
     command: npm run worker:prod
 

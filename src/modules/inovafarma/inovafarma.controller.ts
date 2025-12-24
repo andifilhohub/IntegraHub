@@ -1,5 +1,5 @@
 import { Body, Controller, Headers, Post, UseGuards } from '@nestjs/common';
-import { HmacGuard } from '../auth/hmac.guard';
+import { ApiKeyGuard } from '../auth/api-key.guard';
 import { IngestProductDto } from './dto/ingest-product.dto';
 import { InovafarmaService } from './inovafarma.service';
 import { LoadType } from './dto/process-products-job.dto';
@@ -10,7 +10,7 @@ export class InovafarmaController {
   constructor(private readonly inovafarmaService: InovafarmaService) {}
 
   @Post('products')
-  @UseGuards(HmacGuard)
+  @UseGuards(ApiKeyGuard)
   async emitProducts(
     @Body() rawProducts: unknown[],
     @Headers('x-inova-load-type') rawLoadType?: string | string[],

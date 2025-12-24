@@ -119,7 +119,7 @@ https://integrahub.geniuscloud.com.br
 ## 🔐 Credenciais
 
 **Login do Dashboard**:
-- Chave: Use o valor de `INOVA_SECRET` do arquivo `.env`
+- Chave: Use o valor de `INOVA_API_KEY` do arquivo `.env`
 
 ## ⚡ Comandos Úteis
 

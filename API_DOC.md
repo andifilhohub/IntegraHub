@@ -6,7 +6,7 @@ Este documento centraliza tudo o que você precisa saber para operar a API Integ
 
 ## 1. Visão geral
 
-- **Objetivo**: receber cargas assinadas do ERP InovaFarma, validar via HMAC, enfileirar e persistir farmácias/produtos no PostgreSQL, expor dados para Chatwoot/automações e manter o sistema desacoplado.
+- **Objetivo**: receber cargas autenticadas do ERP InovaFarma, validar via API key simples, enfileirar e persistir farmácias/produtos no PostgreSQL, expor dados para Chatwoot/automações e manter o sistema desacoplado.
 - **Tecnologias principais**: NestJS + TypeScript, Prisma + PostgreSQL, BullMQ + Redis, `nestjs-pino`/`pino` para logging JSON e Swagger para documentação em `/v1/docs`.
 - **Arquitetura mínima**:
   - API (Express/Fastify via Nest) com `AuthModule`, `InovafarmaModule`, `ProductsModule`, `PharmaciesModule`.
@@ -17,17 +17,16 @@ Este documento centraliza tudo o que você precisa saber para operar a API Integ
 
 ## 2. Segurança e autenticação
 
-### 2.1 Cabeçalhos obrigatórios
+### 2.1 Cabeçalho obrigatório
 Todas as requisições POST na rota `POST /v1/inovafarma/products` **devem** conter:
 
-- `X-Inova-Timestamp`: epoch em milissegundos.
-- `X-Inova-Signature`: `sha256=<hex>` calculado com `HMAC_SHA256(INOVA_SECRET, timestamp + rawBody)`.
+- `X-Inova-Api-Key` (ou `X-Api-Key`): valor idêntico ao configurado em `INOVA_API_KEY`.
 
 ### 2.2 Validação
 
-- Guard (`HmacGuard`) compara o timestamp com `HMAC_TIME_WINDOW_MS` (padrão 300.000 ms) e rejeita replay attacks.
-- `crypto.timingSafeEqual` impede timing attacks.  
-- Se o segredo não estiver em `.env`, o guard devolve 500 e o log nativo registra a falha.
+- O `ApiKeyGuard` compara o valor do header com `INOVA_API_KEY`.  
+- Se a chave estiver ausente ou divergente, retorna 401.  
+- Se a variável não estiver configurada, retorna 500 com log de configuração ausente.
 
 ---
 
@@ -35,7 +34,7 @@ Todas as requisições POST na rota `POST /v1/inovafarma/products` **devem** con
 
 ### 3.1 POST /v1/inovafarma/products
 
-- **Fluxo**: valida HMAC → garante que todos os produtos pertençam à mesma farmácia → enfileira no BullMQ → responde rápido com `queued`.
+- **Fluxo**: valida API key → garante que todos os produtos pertençam à mesma farmácia → enfileira no BullMQ → responde rápido com `queued`.
 - **Headers**:
   - `X-Inova-Load-Type`: `full` ou `delta` (default `delta`). Quando `full`, o worker marca os produtos que não aparecem nesse lote como inativos para manter a base sincronizada.
 - **Payload**: array de `IngestProductDto` (veja `src/modules/inovafarma/dto/ingest-product.dto.ts`) contendo:
@@ -90,7 +89,7 @@ Todas as requisições POST na rota `POST /v1/inovafarma/products` **devem** con
 
 ### 5.2 Configuração
 
-- `.env.example` define `DATABASE_URL`, `REDIS_URL`, `INOVA_SECRET`, `HMAC_TIME_WINDOW_MS`, `LOG_LEVEL`.
+- `.env.example` define `DATABASE_URL`, `REDIS_URL`, `INOVA_API_KEY`, `LOG_LEVEL`.
 - Prisma carrega `.env` via `prisma.config.ts` (use `set -a && source .env && set +a` antes de rodar).
 
 ---
@@ -138,7 +137,7 @@ Use o Dockerfile multi-stage e `docker compose up --build` para levantar API, wo
 1. **Chatwoot** nunca persiste dados ERP; ele só consome `GET /v1/products`.
 2. **Logs**: `nestjs-pino` retorna JSON estruturado para observabilidade.
 3. **Escalabilidade**: API e worker rodam separados (ver `worker:prod` e `docker-compose`), filas BullMQ permitem reprocessar com backoff.
-4. **Segurança**: o segredo `INOVA_SECRET` deve ser protegido em produção.
+4. **Segurança**: a chave `INOVA_API_KEY` deve ser protegida em produção.
 5. **Sincronização completa**: cargas marcadas com `X-Inova-Load-Type: full` desativam produtos ausentes (`isActive = false`, `deletedAt` preenchido) sem remover o histórico, o que garante que o catálogo reflita o ERP após a carga semanal.
 
 Use este arquivo para treinar novos operadores, documentar integrações e revisar políticas de segurança. Se quiser exportar para outro formato (PDF, HTML), posso gerar em Markdown estruturado para você. Deseja exportar? 

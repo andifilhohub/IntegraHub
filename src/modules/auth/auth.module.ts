@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { HmacGuard } from './hmac.guard';
+import { ApiKeyGuard } from './api-key.guard';
 
 @Module({
-  providers: [HmacGuard],
-  exports: [HmacGuard],
+  providers: [ApiKeyGuard],
+  exports: [ApiKeyGuard],
 })
 export class AuthModule {}

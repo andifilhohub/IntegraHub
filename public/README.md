@@ -6,7 +6,7 @@ Este diretório contém o frontend do IntegraHub Dashboard, uma interface web pa
 
 ### Funcionalidades
 
-1. **Tela de Login**: Autenticação usando a chave `INOVA_SECRET` do arquivo `.env`
+1. **Tela de Login**: Autenticação usando a chave `INOVA_API_KEY` do arquivo `.env`
 2. **Dashboard**: Visualização dos dados em duas seções:
    - **Arquivos no Buffer**: Mostra os arquivos JSON que estão aguardando processamento no diretório buffer
    - **Produtos Processados**: Mostra os produtos que já foram processados e salvos no banco de dados
@@ -30,7 +30,7 @@ Este diretório contém o frontend do IntegraHub Dashboard, uma interface web pa
 2. **Acessar o dashboard**:
    - Abra o navegador em `http://localhost:3002`
    - Você será redirecionado para a página de login
-   - Digite a chave `INOVA_SECRET` (a mesma que está no arquivo `.env`)
+   - Digite a chave `INOVA_API_KEY` (a mesma que está no arquivo `.env`)
    - Após autenticar, você verá o dashboard com:
      - Estatísticas gerais (total de produtos, farmácias, etc.)
      - Aba "Arquivos no Buffer" mostrando os arquivos JSON pendentes
@@ -54,7 +54,7 @@ O dashboard consome os seguintes endpoints:
 
 ### Segurança
 
-- A autenticação é feita usando a chave `INOVA_SECRET`
+- A autenticação é feita usando a chave `INOVA_API_KEY`
 - O token é armazenado no `localStorage` do navegador
 - Todas as requisições verificam o token antes de retornar dados
 - Se o token for inválido, o usuário é redirecionado para a tela de login

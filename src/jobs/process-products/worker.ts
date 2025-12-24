@@ -12,6 +12,12 @@ const logger = pino({
   base: { worker: PROCESS_PRODUCTS_QUEUE_NAME },
 });
 
+const parseDate = (value?: string) => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
 const redisUrl = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379';
 const redisOptions = {
   maxRetriesPerRequest: null,
@@ -53,6 +59,16 @@ const worker = new Worker<ProcessProductsJobPayload>(
         ean: product.ean,
         price: product.price,
         stock: product.stock,
+        shopId: product.shopId,
+        pricePromo: product.pricePromo,
+        wholesalePrice: product.wholesalePrice,
+        wholesaleMin: product.wholesaleMin,
+        measure: product.measure,
+        size: product.size,
+        color: product.color,
+        productCreatedAt: parseDate(product.productCreatedAt),
+        productUpdatedAt: parseDate(product.productUpdatedAt),
+        stockUpdatedAt: parseDate(product.stockUpdatedAt),
         brand: product.brand,
         ncm: product.ncm,
         category: product.category,
@@ -66,6 +82,16 @@ const worker = new Worker<ProcessProductsJobPayload>(
         ean: product.ean,
         price: product.price,
         stock: product.stock,
+        shopId: product.shopId,
+        pricePromo: product.pricePromo,
+        wholesalePrice: product.wholesalePrice,
+        wholesaleMin: product.wholesaleMin,
+        measure: product.measure,
+        size: product.size,
+        color: product.color,
+        productCreatedAt: parseDate(product.productCreatedAt),
+        productUpdatedAt: parseDate(product.productUpdatedAt),
+        stockUpdatedAt: parseDate(product.stockUpdatedAt),
         brand: product.brand,
         ncm: product.ncm,
         category: product.category,

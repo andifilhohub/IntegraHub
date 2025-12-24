@@ -136,13 +136,13 @@ dig integrahub.geniuscloud.com.br
 ## 📱 Acessar o Dashboard
 
 1. Acesse: `https://integrahub.geniuscloud.com.br`
-2. Faça login com a chave `INOVA_SECRET`
+2. Faça login com a chave `INOVA_API_KEY`
 3. Visualize os dados do buffer e produtos processados
 
 ## 🔐 Segurança
 
 - ✅ Use HTTPS (SSL/TLS)
-- ✅ Mantenha o `INOVA_SECRET` seguro
+- ✅ Mantenha o `INOVA_API_KEY` seguro
 - ✅ Configure firewall (UFW/iptables)
 - ✅ Atualize o servidor regularmente
 

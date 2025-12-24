@@ -28,6 +28,16 @@ model Product {
   ean         String?
   price       Float?
   stock       Int?
+  shopId      Int?
+  pricePromo  Float?
+  wholesalePrice Float?
+  wholesaleMin   Float?
+  measure     Float?
+  size        String?
+  color       String?
+  productCreatedAt DateTime?
+  productUpdatedAt DateTime?
+  stockUpdatedAt   DateTime?
   brand       String?
   ncm         String?
   category    String?

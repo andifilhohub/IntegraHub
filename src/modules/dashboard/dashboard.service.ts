@@ -19,7 +19,7 @@ export class DashboardService {
   }
 
   async authenticate(secret: string): Promise<boolean> {
-    const expectedSecret = this.configService.get<string>('INOVA_SECRET');
+    const expectedSecret = this.configService.get<string>('INOVA_API_KEY');
     return secret === expectedSecret;
   }
 

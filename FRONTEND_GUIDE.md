@@ -3,14 +3,14 @@
 ## 📋 Resumo
 
 Foi criado um frontend completo para o IntegraHub com:
-- Tela de login usando autenticação com `INOVA_SECRET`
+- Tela de login usando autenticação com `INOVA_API_KEY`
 - Dashboard com visualização de dados do buffer e produtos processados
 - Interface responsiva e moderna
 
 ## 🎯 Funcionalidades Implementadas
 
 ### 1. Sistema de Autenticação
-- Formulário de login que valida a chave `INOVA_SECRET`
+- Formulário de login que valida a chave `INOVA_API_KEY`
 - Token armazenado no localStorage do navegador
 - Validação automática do token em todas as requisições
 - Redirecionamento automático se não autenticado
@@ -72,7 +72,7 @@ public/
 ## 🔌 Endpoints da API
 
 ### POST /v1/dashboard/auth
-Autentica o usuário com o INOVA_SECRET
+Autentica o usuário com o INOVA_API_KEY
 ```json
 // Request
 {
@@ -161,7 +161,7 @@ npm run start:prod
 
 1. Abra o navegador em `http://localhost:3002`
 2. Você será redirecionado para `/login.html`
-3. Digite a chave `INOVA_SECRET` (a mesma configurada no `.env`)
+3. Digite a chave `INOVA_API_KEY` (a mesma configurada no `.env`)
 4. Após autenticar, você verá o dashboard
 
 ### 3. Navegar pelo Dashboard
@@ -179,7 +179,7 @@ npm run start:prod
 - **Autenticação**: Todas as rotas do dashboard exigem o token
 - **Validação**: O token é validado em cada requisição
 - **Timeout**: Se o token for inválido, o usuário é redirecionado para login
-- **Proteção**: O `INOVA_SECRET` nunca é exposto no frontend (apenas usado para autenticação)
+- **Proteção**: O `INOVA_API_KEY` nunca é exposto no frontend (apenas usado para autenticação)
 
 ## 🎨 Design
 
@@ -238,7 +238,7 @@ npm run start:prod
 ## 🐛 Troubleshooting
 
 ### Erro ao fazer login
-- Verifique se o `INOVA_SECRET` no `.env` está correto
+- Verifique se o `INOVA_API_KEY` no `.env` está correto
 - Certifique-se de que a aplicação está rodando
 
 ### Dados não aparecem no dashboard

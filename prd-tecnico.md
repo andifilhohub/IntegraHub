@@ -28,7 +28,7 @@ Implementar uma API corporativa robusta que:
 
 Recebe cargas de produtos/estoque enviadas pelo ERP InovaFarma.
 
-Valida todas as requisições via HMAC SHA256 (segredo compartilhado).
+Valida todas as requisições via API key simples (segredo compartilhado).
 
 Processa lotes de produtos usando filas assíncronas (BullMQ + Redis).
 
@@ -51,11 +51,7 @@ TypeScript
 
 Segurança
 
-HMAC SHA256 via crypto
-
-Timestamp + body concatenado
-
-Proteção contra replay attack
+API key via header
 
 Banco
 
@@ -125,7 +121,7 @@ main.ts
 
 InovaFarma envia POST para /inovafarma/products.
 
-Requisição é assinada com HMAC e verificada pelo HmacGuard.
+Requisição é autenticada com API key e verificada pelo ApiKeyGuard.
 
 Payload (array de produtos) é aceito.
 
@@ -179,26 +175,20 @@ model Product {
   @@unique([pharmacyId, productId], name: "pharmacy_product_unique")
 }
 
-6. Regras de Segurança (HMAC)
+6. Regras de Segurança (API key)
 Header obrigatório:
-X-Inova-Timestamp: <epoch>
-X-Inova-Signature: sha256=<hex>
-
-Cálculo:
-signature = HMAC_SHA256(INOVA_SECRET, timestamp + raw_body)
+X-Inova-Api-Key (ou X-Api-Key): deve ser idêntico a INOVA_API_KEY.
 
 Validação:
 
-rejeitar se timestamp for > 5 min do horário atual
-
-comparar assinatura com crypto.timingSafeEqual
+comparar valor do header com a variável de ambiente
+retornar 401 se ausente ou divergente
 
 7. Endpoints obrigatórios
 7.1. Ingestão de produtos
 POST /inovafarma/products
 Headers:
-  X-Inova-Timestamp
-  X-Inova-Signature
+  X-Inova-Api-Key (ou X-Api-Key)
 
 Body: [ {...}, {...}, ... ]
 
@@ -268,7 +258,7 @@ Banco separado (não usar database do Chatwoot).
 
 Versionamento de API futuro: /v1/...
 
-Testes mínimos para HMAC e ingestão.
+Testes mínimos para API key e ingestão.
 
 11. Resultado final esperado
 

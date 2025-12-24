@@ -21,7 +21,13 @@ async function bootstrap() {
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Inova-Signature', 'X-Inova-Timestamp', 'X-Inova-Load-Type'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Api-Key',
+      'X-Inova-Api-Key',
+      'X-Inova-Load-Type',
+    ],
   });
   
   app.setGlobalPrefix('v1', {
