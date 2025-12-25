@@ -3,6 +3,7 @@ import compress from '@fastify/compress';
 import cors from '@fastify/cors';
 import dotenv from 'dotenv';
 import { ingestProducts } from './api/ingest.js';
+import { getProductsHandler } from './api/products.js';
 import { connectProducer, disconnectProducer } from './kafka/producer.js';
 import { ensureBucket } from './storage/client.js';
 import logger from './utils/logger.js';
@@ -37,6 +38,9 @@ fastify.post('/v1/inovafarma/products', {
 fastify.get('/health', async (request, reply) => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
+
+// Rota de produtos para Chatwoot
+fastify.get('/v1/products', getProductsHandler);
 
 // Startup
 async function start() {
