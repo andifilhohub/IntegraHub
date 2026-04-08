@@ -100,6 +100,7 @@ export async function getProductsHandler(request, reply) {
         p.ean as sku,
         p.price,
         p."pricePromo",
+        p."pricePromos",
         p.stock,
         p.brand,
         p.category,
@@ -132,6 +133,7 @@ export async function getProductsHandler(request, reply) {
       // Preços
       price: product.price || 0,
       pricePromo: product.pricePromo || null,
+      pricePromos: product.pricePromos || [],
       
       // Estoque
       stock: product.stock || 0,

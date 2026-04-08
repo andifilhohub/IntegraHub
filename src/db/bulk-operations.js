@@ -6,17 +6,21 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
   try {
     await client.query('BEGIN');
     
-    // Deduplicate by PRODUCTID + pricePromo keeping the last occurrence to avoid ON CONFLICT self-updates.
+    // Deduplicate by PRODUCTID only — collect all pricePromo values per product into an array.
+    // This way a product with multiple promotions becomes a single row with pricePromos=[10, 20, 25].
+    // On each load the array is fully replaced, so edits/additions/removals are handled correctly.
     const dedupedProducts = (() => {
       const byId = new Map();
       for (const item of products) {
         const key = item?.PRODUCTID;
         if (!key) continue;
+        if (!byId.has(key)) {
+          byId.set(key, { item, promos: [] });
+        }
         const parsedPromo = parseFloat(item?.PRICEPROMO);
         const parsedPrice = parseFloat(item?.PRICE);
         const normalizedPromo = Number.isFinite(parsedPromo) ? parsedPromo : (Number.isFinite(parsedPrice) ? parsedPrice : 0);
-        const compositeKey = `${String(key)}::${String(normalizedPromo)}`;
-        byId.set(compositeKey, { item, normalizedPromo });
+        byId.get(key).promos.push(normalizedPromo);
       }
       return Array.from(byId.values());
     })();
@@ -27,15 +31,18 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
       const placeholders = [];
       let paramIndex = 1;
       
-      dedupedProducts.forEach(({ item: p, normalizedPromo }) => {
+      dedupedProducts.forEach(({ item: p, promos }) => {
+        const uniquePromos = [...new Set(promos)].sort((a, b) => a - b);
+        const minPromo = uniquePromos.length > 0 ? uniquePromos[0] : (parseFloat(p.PRICE) || 0);
+
         placeholders.push(
           `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
+          `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}::double precision[], $${paramIndex++}, ` +
           `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
           `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-          `$${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, ` +
-          `$${paramIndex++}, true, NOW(), NOW(), NOW())`
+          `$${paramIndex++}, $${paramIndex++}, true, NOW(), NOW(), NOW())`
         );
-        
+
         values.push(
           pharmacyId,
           p.SHOPID,
@@ -44,7 +51,8 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
           p.DESCRIPTION,
           p.EAN,
           parseFloat(p.PRICE) || 0,
-          Number.isFinite(normalizedPromo) ? normalizedPromo : (parseFloat(p.PRICEPROMO) || parseFloat(p.PRICE) || 0),
+          minPromo,
+          uniquePromos,
           parseFloat(p.WHOLESALEPRICE) || 0,
           parseInt(p.WHOLESALEMIN) || 0,
           parseFloat(p.QUANTITY) || 0,
@@ -64,12 +72,12 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
       const upsertQuery = `
         INSERT INTO "Product" (
           "pharmacyId", "shopId", "productId", title, description, ean,
-          price, "pricePromo", "wholesalePrice", "wholesaleMin", stock,
+          price, "pricePromo", "pricePromos", "wholesalePrice", "wholesaleMin", stock,
           brand, ncm, category, "imageLink", measure, size, color, indice,
           "lastBatchId", "rawJson", "isActive", "lastSeenAt", "updatedAt", "createdAt"
         )
         VALUES ${placeholders.join(', ')}
-        ON CONFLICT ("pharmacyId", "productId", "pricePromo")
+        ON CONFLICT ("pharmacyId", "productId")
         DO UPDATE SET
           title = EXCLUDED.title,
           "shopId" = EXCLUDED."shopId",
@@ -77,6 +85,7 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
           ean = EXCLUDED.ean,
           price = EXCLUDED.price,
           "pricePromo" = EXCLUDED."pricePromo",
+          "pricePromos" = EXCLUDED."pricePromos",
           "wholesalePrice" = EXCLUDED."wholesalePrice",
           "wholesaleMin" = EXCLUDED."wholesaleMin",
           stock = EXCLUDED.stock,
@@ -93,11 +102,11 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
           "isActive" = true,
           "lastSeenAt" = NOW(),
           "updatedAt" = NOW()
-        WHERE 
+        WHERE
           "Product".title IS DISTINCT FROM EXCLUDED.title OR
           "Product".price IS DISTINCT FROM EXCLUDED.price OR
           "Product".stock IS DISTINCT FROM EXCLUDED.stock OR
-          "Product"."pricePromo" IS DISTINCT FROM EXCLUDED."pricePromo" OR
+          "Product"."pricePromos" IS DISTINCT FROM EXCLUDED."pricePromos" OR
           "Product"."wholesalePrice" IS DISTINCT FROM EXCLUDED."wholesalePrice" OR
           "Product"."isActive" IS DISTINCT FROM true OR
           "Product"."lastBatchId" IS DISTINCT FROM EXCLUDED."lastBatchId"
