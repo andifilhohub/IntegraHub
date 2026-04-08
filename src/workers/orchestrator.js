@@ -2,6 +2,7 @@ import { Worker } from 'worker_threads';
 import os from 'os';
 import { startChunkerWorker } from './chunker.js';
 import { startUpsertWorker } from './upsert.js';
+import { startSalesWorker } from './sales.js';
 import logger from '../utils/logger.js';
 
 const MAX_WORKERS = parseInt(process.env.MAX_UPSERT_WORKERS) || os.cpus().length;
@@ -12,6 +13,7 @@ class WorkerOrchestrator {
   constructor() {
     this.upsertWorkers = [];
     this.chunkerWorker = null;
+    this.salesWorker = null;
   }
 
   async start() {
@@ -20,6 +22,10 @@ class WorkerOrchestrator {
     // Start chunker worker (single instance)
     this.chunkerWorker = await startChunkerWorker();
     logger.info('✅ Chunker worker started');
+
+    // Start sales worker (single instance)
+    this.salesWorker = await startSalesWorker();
+    logger.info('✅ Sales worker started');
     
     // Start initial upsert workers
     for (let i = 0; i < MIN_WORKERS; i++) {
@@ -116,6 +122,10 @@ class WorkerOrchestrator {
     // Disconnect chunker
     if (this.chunkerWorker) {
       await this.chunkerWorker.disconnect();
+    }
+
+    if (this.salesWorker) {
+      await this.salesWorker.disconnect();
     }
     
     // Disconnect all upsert workers

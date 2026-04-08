@@ -1,5 +1,5 @@
 import { createConsumer } from '../kafka/consumer.js';
-import { bulkUpsertProducts, markInactiveProducts } from '../db/bulk-operations.js';
+import { bulkUpsertProducts, markInactiveProductsWindow } from '../db/bulk-operations.js';
 import { query } from '../db/pool.js';
 import { getObject } from '../storage/client.js';
 import logger from '../utils/logger.js';
@@ -75,8 +75,12 @@ export async function processChunk(chunkData) {
     if (parseInt(completedChunks.rows[0].completed) === totalChunks) {
       // All chunks processed
       if (loadType === 'full') {
-        const inactivated = await markInactiveProducts(pharmacyId, batchId);
-        logger.info({ batchId, inactivated }, 'Marked inactive products');
+        const windowMinutes = parseInt(process.env.FULL_WINDOW_MINUTES || '10', 10);
+        const result = await markInactiveProductsWindow(pharmacyId, batchId, windowMinutes);
+        logger.info(
+          { batchId, ...result, windowMinutes },
+          result.skipped ? 'Skipped inactivation' : 'Marked inactive products'
+        );
       }
       
       await query(
@@ -125,6 +129,11 @@ export async function startUpsertWorker(workerId = 0) {
   
   await consumer.run({
     eachMessage: async ({ topic, partition, message }) => {
+      if (!message || !message.value) {
+        logger.warn({ topic, partition }, 'Received empty message');
+        return;
+      }
+
       const chunkData = JSON.parse(message.value.toString());
       await processChunk(chunkData);
     }

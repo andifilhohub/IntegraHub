@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import dotenv from 'dotenv';
 import { ingestProducts } from './api/ingest.js';
 import { getProductsHandler } from './api/products.js';
+import { ingestSale, listPendingSalesHandler, getSaleByIdHandler, consumeSaleHandler, listConsumedSalesHandler } from './api/sales.js';
 import { connectProducer, disconnectProducer } from './kafka/producer.js';
 import { ensureBucket } from './storage/client.js';
 import logger from './utils/logger.js';
@@ -41,6 +42,15 @@ fastify.get('/health', async (request, reply) => {
 
 // Rota de produtos para Chatwoot
 fastify.get('/v1/products', getProductsHandler);
+
+// Rota de vendas para Chatwoot
+fastify.post('/v1/sales', ingestSale);
+
+// Rotas de consumo de vendas (InovaFarma)
+fastify.get('/api/v1/inovafarma/sales/:cnpj/pending', listPendingSalesHandler);
+fastify.get('/api/v1/inovafarma/sales/:cnpj/consumed', listConsumedSalesHandler);
+fastify.get('/api/v1/inovafarma/sales/:cnpj/:id', getSaleByIdHandler);
+fastify.post('/api/v1/inovafarma/sales/:cnpj/:id/consume', consumeSaleHandler);
 
 // Startup
 async function start() {

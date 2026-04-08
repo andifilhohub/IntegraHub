@@ -4,6 +4,8 @@
 
 ```
 API → Kafka (batches.received) → Chunker Worker → Kafka (chunks.ready) → Upsert Workers (2-4) → PostgreSQL
+
+API → Kafka (sales.received) → Sales Worker → PostgreSQL
 ```
 
 ## Running Workers
@@ -23,6 +25,9 @@ npm run worker:chunker
 
 # Upsert (multiple instances)
 npm run worker:upsert
+
+# Sales (1 instance)
+npm run worker:sales
 ```
 
 ## Configuration
@@ -46,6 +51,12 @@ npm run worker:upsert
 - Bulk upserts products to PostgreSQL
 - Updates batch progress
 - Handles FULL vs DELTA load logic
+
+### Sales Worker
+- Consumes `sales.received` events
+- Downloads payload from MinIO
+- Persists raw JSON to PostgreSQL
+- Updates status to COMPLETED/FAILED
 
 ## Monitoring
 

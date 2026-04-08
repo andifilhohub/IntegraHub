@@ -49,6 +49,28 @@ export async function publishBatchReceived(batchId, cnpj, loadType) {
   });
 }
 
+export async function publishSaleReceived(saleId, cnpj, pharmacyId, payloadUri) {
+  const topic = process.env.KAFKA_TOPIC_SALES_RECEIVED || 'sales.received';
+
+  await producer.send({
+    topic,
+    messages: [{
+      key: cnpj,
+      value: JSON.stringify({
+        saleId,
+        cnpj,
+        pharmacyId,
+        payloadUri,
+        timestamp: new Date().toISOString()
+      }),
+      headers: {
+        'event-type': 'sale.received',
+        'sale-id': saleId
+      }
+    }]
+  });
+}
+
 export async function disconnectProducer() {
   if (isConnected) {
     await producer.disconnect();

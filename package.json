@@ -10,7 +10,8 @@
     "migrate": "node src/db/migrate.js",
     "workers": "node src/workers/orchestrator.js",
     "worker:chunker": "node src/workers/chunker.js",
-    "worker:upsert": "node src/workers/upsert.js"
+    "worker:upsert": "node src/workers/upsert.js",
+    "worker:sales": "node src/workers/sales.js"
   },
   "repository": {
     "type": "git",

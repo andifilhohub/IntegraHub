@@ -12,13 +12,17 @@ import { query } from '../db/pool.js';
  * - limit: itens por página (default: 40, max: 100)
  * - cnpj: filtrar por CNPJ (obrigatório)
  * - q: buscar por título/descrição (opcional)
+ * - ean: filtrar por EAN/código de barras (opcional)
  * - category: filtrar por categoria (opcional)
  */
 export async function getProductsHandler(request, reply) {
   try {
     // Validar autenticação
     const authHeader = request.headers.authorization || request.headers['x-api-key'];
-    const validApiKeys = (process.env.VALID_API_KEYS || '').split(/[,;]/).map(k => k.trim());
+    const validApiKeys = (process.env.VALID_API_KEYS || '')
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean);
     
     let isAuthenticated = false;
     
@@ -38,7 +42,7 @@ export async function getProductsHandler(request, reply) {
     const limit = Math.min(parseInt(request.query.limit) || 40, 100);
     const offset = (page - 1) * limit;
     
-    const { cnpj, category, q } = request.query;
+    const { cnpj, category, q, ean } = request.query;
     
     // CNPJ é obrigatório
     if (!cnpj) {
@@ -66,6 +70,11 @@ export async function getProductsHandler(request, reply) {
       conditions.push(`(p.title ILIKE $${paramIndex} OR p.description ILIKE $${paramIndex})`);
       params.push(`%${q}%`);
       paramIndex++;
+    }
+
+    if (ean) {
+      conditions.push(`p.ean = $${paramIndex++}`);
+      params.push(ean);
     }
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

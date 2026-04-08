@@ -1,8 +1,30 @@
 import { uploadStream } from '../storage/client.js';
 import { publishBatchReceived } from '../kafka/producer.js';
-import { findPharmacyByCnpj, createBatch, getBatchByIdempotencyKey } from '../db/queries.js';
+import { findPharmacyByCnpj, createBatch, getBatchByIdempotencyKey, upsertPharmacy } from '../db/queries.js';
 import { logBatchReceived, logBatchError } from '../utils/logger.js';
 import crypto from 'crypto';
+
+const normalizeString = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const buildPharmacyPayload = (product, cnpj) => {
+  return {
+    cnpj,
+    name: normalizeString(
+      product?.PHARMACY_NAME ??
+      product?.PHARMACY ??
+      product?.SHOP_NAME ??
+      product?.SHOPNAME ??
+      product?.NAME
+    ) || `Farmacia ${cnpj}`,
+    state: normalizeString(product?.STATE ?? product?.UF),
+    city: normalizeString(product?.CITY ?? product?.CIDADE),
+    rawJson: product || {}
+  };
+};
 
 export async function ingestProducts(request, reply) {
   const apiKey = request.headers['x-inova-api-key'];
@@ -41,7 +63,8 @@ export async function ingestProducts(request, reply) {
       return reply.code(400).send({ error: 'Payload must be a non-empty array' });
     }
 
-    cnpj = products[0].CNPJ;
+    const primaryProduct = products[0];
+    cnpj = primaryProduct.CNPJ;
     if (!cnpj) {
       return reply.code(400).send({ error: 'CNPJ not found in payload' });
     }
@@ -57,12 +80,10 @@ export async function ingestProducts(request, reply) {
     }
 
     // Find pharmacy
+    const pharmacyPayload = buildPharmacyPayload(primaryProduct, cnpj);
     pharmacy = await findPharmacyByCnpj(cnpj);
     if (!pharmacy) {
-      return reply.code(404).send({ 
-        error: 'Pharmacy not found',
-        cnpj 
-      });
+      pharmacy = await upsertPharmacy(pharmacyPayload);
     }
 
     // Check for existing batch with same idempotency key
