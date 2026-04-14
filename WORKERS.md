@@ -37,6 +37,9 @@ npm run worker:sales
 - `MIN_UPSERT_WORKERS`: Minimum upsert workers (default: 2)
 - `CHUNK_SIZE`: Products per chunk (default: 1000)
 - `SCALE_CHECK_INTERVAL`: Auto-scaling check interval in ms (default: 30000)
+- `MAX_CHUNK_RETRIES`: Maximum retry attempts per failed chunk in upsert (default: 3)
+- `KAFKA_TOPIC_CHUNKS_READY`: Topic for chunk processing/retry (default: `chunks.ready`)
+- `KAFKA_TOPIC_CHUNKS_FAILED`: Topic for terminal chunk failures (default: `chunks.failed`)
 
 ## Worker Responsibilities
 
@@ -51,6 +54,8 @@ npm run worker:sales
 - Bulk upserts products to PostgreSQL
 - Updates batch progress
 - Handles FULL vs DELTA load logic
+- Retries failed chunks automatically until `MAX_CHUNK_RETRIES`
+- Publishes final failures to `chunks.failed` when retries are exhausted
 
 ### Sales Worker
 - Consumes `sales.received` events
@@ -63,6 +68,32 @@ npm run worker:sales
 Workers log to stdout with structured JSON:
 ```json
 {"level":"INFO","event":"upsert.complete","chunkId":"...","upserted":1000}
+```
+
+### Failure Observability
+
+Batch and chunk failures are persisted in PostgreSQL for post-mortem analysis:
+- `batches.error_message`, `batches.error_code`, `batches.error_context`, `batches.last_error_at`
+- `batch_chunks.error_message`, `batch_chunks.error_code`, `batch_chunks.error_context`, `batch_chunks.last_error_at`
+
+Quick queries:
+
+```sql
+-- Latest failed batches with root cause
+SELECT batch_id, status, items_total, items_processed, items_failed,
+       error_code, error_message, last_error_at
+FROM batches
+WHERE status IN ('FAILED', 'PARTIAL_FAIL')
+ORDER BY COALESCE(last_error_at, updated_at) DESC
+LIMIT 20;
+
+-- Failed chunks with error payload context
+SELECT chunk_id, batch_id, chunk_index, attempts, items_count,
+       error_code, error_message, error_context, last_error_at
+FROM batch_chunks
+WHERE status = 'FAILED'
+ORDER BY COALESCE(last_error_at, updated_at) DESC
+LIMIT 50;
 ```
 
 ## Kubernetes Deployment (Future)
