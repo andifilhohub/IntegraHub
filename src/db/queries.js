@@ -8,6 +8,24 @@ export async function findPharmacyByCnpj(cnpj) {
   return result.rows[0];
 }
 
+export async function findPharmacyByApiKey(apiKey) {
+  const result = await query(
+    'SELECT id, cnpj, name FROM "Pharmacy" WHERE "apiKey" = $1 LIMIT 1',
+    [apiKey]
+  );
+  return result.rows[0] || null;
+}
+
+export async function setPharmacyApiKey(cnpj, apiKey) {
+  const result = await query(
+    `UPDATE "Pharmacy" SET "apiKey" = $1, "updatedAt" = NOW()
+     WHERE cnpj = $2
+     RETURNING id, cnpj, name`,
+    [apiKey, cnpj]
+  );
+  return result.rows[0] || null;
+}
+
 export async function upsertPharmacy({ cnpj, name, state, city, rawJson }) {
   const result = await query(
     `INSERT INTO "Pharmacy" (cnpj, name, state, city, "rawJson", "createdAt", "updatedAt")
@@ -83,8 +101,9 @@ export async function createSale({
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11, $12, $13, $14
     )
-    ON CONFLICT (pharmacy_id, codigo_venda_online, tipo_ecommerce)
+    ON CONFLICT (pharmacy_id, codigo_venda_online)
     DO UPDATE SET
+      tipo_ecommerce = COALESCE(EXCLUDED.tipo_ecommerce, sales.tipo_ecommerce),
       data_venda = EXCLUDED.data_venda,
       nome_cliente = EXCLUDED.nome_cliente,
       entrega = EXCLUDED.entrega,

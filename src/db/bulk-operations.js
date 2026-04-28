@@ -18,9 +18,9 @@ export async function bulkUpsertProducts(pharmacyId, products, loadType, batchId
           byId.set(key, { item, promos: [] });
         }
         const parsedPromo = parseFloat(item?.PRICEPROMO);
-        const parsedPrice = parseFloat(item?.PRICE);
-        const normalizedPromo = Number.isFinite(parsedPromo) ? parsedPromo : (Number.isFinite(parsedPrice) ? parsedPrice : 0);
-        byId.get(key).promos.push(normalizedPromo);
+        if (Number.isFinite(parsedPromo) && parsedPromo > 0) {
+          byId.get(key).promos.push(parsedPromo);
+        }
       }
       return Array.from(byId.values());
     })();

@@ -2,6 +2,7 @@ import { uploadStream } from '../storage/client.js';
 import { publishBatchReceived } from '../kafka/producer.js';
 import { findPharmacyByCnpj, createBatch, getBatchByIdempotencyKey, upsertPharmacy } from '../db/queries.js';
 import { logBatchReceived, logBatchError } from '../utils/logger.js';
+import { authenticate } from './auth.js';
 import crypto from 'crypto';
 
 const normalizeString = (value) => {
@@ -27,15 +28,18 @@ const buildPharmacyPayload = (product, cnpj) => {
 };
 
 export async function ingestProducts(request, reply) {
-  const apiKey = request.headers['x-inova-api-key'];
   const loadType = request.headers['x-inova-load-type'];
   let idempotencyKey = request.headers['idempotency-key'];
 
-  // Validate headers
-  if (!apiKey || !loadType) {
+  const auth = await authenticate(request);
+  if (!auth) {
+    return reply.code(401).send({ error: 'Unauthorized', message: 'Valid API key required' });
+  }
+
+  if (!loadType) {
     return reply.code(400).send({
-      error: 'Missing required headers',
-      required: ['X-Inova-Api-Key', 'X-Inova-Load-Type']
+      error: 'Missing required header',
+      required: ['X-Inova-Load-Type']
     });
   }
 
@@ -44,11 +48,6 @@ export async function ingestProducts(request, reply) {
       error: 'Invalid load type',
       message: 'X-Inova-Load-Type must be "delta" or "full"'
     });
-  }
-
-  const validApiKeys = (process.env.VALID_API_KEYS || '').split(',');
-  if (!validApiKeys.includes(apiKey)) {
-    return reply.code(401).send({ error: 'Invalid API key' });
   }
 
   let cnpj;
@@ -67,6 +66,13 @@ export async function ingestProducts(request, reply) {
     cnpj = primaryProduct.CNPJ;
     if (!cnpj) {
       return reply.code(400).send({ error: 'CNPJ not found in payload' });
+    }
+
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      return reply.code(403).send({
+        error: 'Forbidden',
+        message: 'API key does not belong to the CNPJ in the payload'
+      });
     }
 
     // Generate idempotency key if not provided

@@ -1,4 +1,5 @@
 import { query } from '../db/pool.js';
+import { authenticate } from './auth.js';
 
 /**
  * GET /v1/products
@@ -17,38 +18,33 @@ import { query } from '../db/pool.js';
  */
 export async function getProductsHandler(request, reply) {
   try {
-    // Validar autenticação
-    const authHeader = request.headers.authorization || request.headers['x-api-key'];
-    const validApiKeys = (process.env.VALID_API_KEYS || '')
-      .split(',')
-      .map(k => k.trim())
-      .filter(Boolean);
-    
-    let isAuthenticated = false;
-    
-    if (authHeader) {
-      const token = authHeader.replace(/^Bearer\s+/i, '');
-      isAuthenticated = validApiKeys.includes(token);
-    }
-    
-    if (!isAuthenticated) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
       });
     }
+
     // Parse query params
     const page = parseInt(request.query.page) || 1;
     const limit = Math.min(parseInt(request.query.limit) || 40, 100);
     const offset = (page - 1) * limit;
-    
-    const { cnpj, category, q, ean } = request.query;
-    
-    // CNPJ é obrigatório
+
+    const { category, q, ean } = request.query;
+    const cnpj = auth.pharmacy ? auth.pharmacy.cnpj : request.query.cnpj;
+
     if (!cnpj) {
       return reply.status(400).send({
         error: 'Bad Request',
         message: 'CNPJ parameter is required'
+      });
+    }
+
+    if (auth.pharmacy && request.query.cnpj && request.query.cnpj !== cnpj) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'API key does not belong to the requested CNPJ'
       });
     }
     

@@ -10,6 +10,7 @@ import {
 } from '../db/queries.js';
 import { getObject, uploadObject } from '../storage/client.js';
 import { publishSaleReceived } from '../kafka/producer.js';
+import { authenticate } from './auth.js';
 import crypto from 'crypto';
 
 async function fireSaleConsumedWebhook(data, log) {
@@ -57,21 +58,10 @@ const buildFallbackPharmacy = (cnpj) => ({
   rawJson: {}
 });
 
-const authenticate = (request) => {
-  const authHeader = request.headers.authorization || request.headers['x-api-key'] || request.headers['x-inova-api-key'];
-  const validApiKeys = (process.env.VALID_API_KEYS || '')
-    .split(',')
-    .map(k => k.trim())
-    .filter(Boolean);
-
-  if (!authHeader) return false;
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  return validApiKeys.includes(token);
-};
-
 export async function ingestSale(request, reply) {
   try {
-    if (!authenticate(request)) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
@@ -97,6 +87,13 @@ export async function ingestSale(request, reply) {
       });
     }
 
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpjEmpresa) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'API key does not belong to the CNPJ in the payload'
+      });
+    }
+
     const dataVenda = new Date(dataVendaRaw);
     if (Number.isNaN(dataVenda.getTime())) {
       return reply.status(400).send({
@@ -117,8 +114,11 @@ export async function ingestSale(request, reply) {
     const checksum = crypto.createHash('sha256').update(payloadBuffer).digest('hex');
 
     if (!idempotencyKey) {
-      const hash = crypto.createHash('md5').update(payloadBuffer).digest('hex').substring(0, 8);
-      idempotencyKey = `auto-${cnpjEmpresa}-${Date.now()}-${hash}`;
+      // Content-only hash so the same payload always maps to the same key.
+      // Using Date.now() here caused different keys for the same payload on
+      // retries, bypassing the idempotency check and creating duplicate rows.
+      const hash = crypto.createHash('md5').update(payloadBuffer).digest('hex').substring(0, 16);
+      idempotencyKey = `auto-${cnpjEmpresa}-${hash}`;
     }
 
     const existingSale = await getSaleByIdempotencyKey(pharmacy.id, idempotencyKey);
@@ -173,7 +173,8 @@ export async function ingestSale(request, reply) {
 
 export async function listPendingSalesHandler(request, reply) {
   try {
-    if (!authenticate(request)) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
@@ -181,6 +182,9 @@ export async function listPendingSalesHandler(request, reply) {
     }
 
     const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
+    }
     if (!cnpj) {
       return reply.status(400).send({
         error: 'Bad Request',
@@ -208,7 +212,8 @@ export async function listPendingSalesHandler(request, reply) {
 
 export async function getSaleByIdHandler(request, reply) {
   try {
-    if (!authenticate(request)) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
@@ -217,6 +222,9 @@ export async function getSaleByIdHandler(request, reply) {
 
     const saleId = request.params.id;
     const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
+    }
     if (!cnpj) {
       return reply.status(400).send({
         error: 'Bad Request',
@@ -256,7 +264,8 @@ export async function getSaleByIdHandler(request, reply) {
 
 export async function listConsumedSalesHandler(request, reply) {
   try {
-    if (!authenticate(request)) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
@@ -264,6 +273,9 @@ export async function listConsumedSalesHandler(request, reply) {
     }
 
     const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
+    }
     if (!cnpj) {
       return reply.status(400).send({ error: 'Bad Request', message: 'cnpj is required' });
     }
@@ -310,7 +322,8 @@ export async function listConsumedSalesHandler(request, reply) {
 
 export async function consumeSaleHandler(request, reply) {
   try {
-    if (!authenticate(request)) {
+    const auth = await authenticate(request);
+    if (!auth) {
       return reply.status(401).send({
         error: 'Unauthorized',
         message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
@@ -319,6 +332,9 @@ export async function consumeSaleHandler(request, reply) {
 
     const saleId = request.params.id;
     const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
+    }
     if (!cnpj) {
       return reply.status(400).send({
         error: 'Bad Request',

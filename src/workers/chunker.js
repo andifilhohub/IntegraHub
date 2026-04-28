@@ -150,6 +150,7 @@ export async function startChunkerWorker() {
           const chunkResult = await query(
             `INSERT INTO batch_chunks (batch_id, chunk_uri, chunk_index, items_count, status)
              VALUES ($1, $2, $3, $4, 'PENDING')
+             ON CONFLICT (batch_id, chunk_index) DO UPDATE SET chunk_uri = EXCLUDED.chunk_uri
              RETURNING chunk_id`,
             [batchId, chunkKey, chunkIndex, chunkProducts.length]
           );

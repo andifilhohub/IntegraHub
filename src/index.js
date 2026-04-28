@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { ingestProducts } from './api/ingest.js';
 import { getProductsHandler } from './api/products.js';
 import { ingestSale, listPendingSalesHandler, getSaleByIdHandler, consumeSaleHandler, listConsumedSalesHandler } from './api/sales.js';
+import { generatePharmacyApiKeyHandler } from './api/admin.js';
 import { connectProducer, disconnectProducer } from './kafka/producer.js';
 import { ensureBucket } from './storage/client.js';
 import logger from './utils/logger.js';
@@ -51,6 +52,10 @@ fastify.get('/api/v1/inovafarma/sales/:cnpj/pending', listPendingSalesHandler);
 fastify.get('/api/v1/inovafarma/sales/:cnpj/consumed', listConsumedSalesHandler);
 fastify.get('/api/v1/inovafarma/sales/:cnpj/:id', getSaleByIdHandler);
 fastify.post('/api/v1/inovafarma/sales/:cnpj/:id/consume', consumeSaleHandler);
+
+// Admin: gerenciamento de chaves por farmácia
+fastify.post('/admin/pharmacies/:cnpj/api-key', generatePharmacyApiKeyHandler);
+fastify.post('/admin/pharmacies/api-key', generatePharmacyApiKeyHandler);
 
 // Startup
 async function start() {
