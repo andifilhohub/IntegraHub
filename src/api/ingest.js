@@ -2,6 +2,7 @@ import { uploadStream } from '../storage/client.js';
 import { publishBatchReceived } from '../kafka/producer.js';
 import { findPharmacyByCnpj, createBatch, getBatchByIdempotencyKey, upsertPharmacy } from '../db/queries.js';
 import { logBatchReceived, logBatchError } from '../utils/logger.js';
+import { persistErrorLog } from '../db/error-log.js';
 import { authenticate } from './auth.js';
 import crypto from 'crypto';
 
@@ -151,7 +152,24 @@ export async function ingestProducts(request, reply) {
 
   } catch (error) {
     logBatchError(batchId || 'unknown', cnpj || 'unknown', error);
-    
+
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'ingest_products.error',
+      severity: 'ERROR',
+      pharmacyId: pharmacy?.id || null,
+      cnpj: cnpj || null,
+      batchId: batchId || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: {
+        stack: error.stack ? String(error.stack).slice(0, 4000) : null,
+      },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
+
     return reply.code(500).send({
       error: 'Internal server error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined

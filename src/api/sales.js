@@ -10,8 +10,22 @@ import {
 } from '../db/queries.js';
 import { getObject, uploadObject } from '../storage/client.js';
 import { publishSaleReceived } from '../kafka/producer.js';
+import { persistErrorLog } from '../db/error-log.js';
 import { authenticate } from './auth.js';
 import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
+
+// Gambiarra: criar arquivo flag quando houver 401
+const createUnauthorizedFlag = async (cnpj, endpoint) => {
+  try {
+    const flagFile = path.join(process.cwd(), '.unauthorized-request');
+    const message = `[${new Date().toISOString()}] ${endpoint} - CNPJ: ${cnpj}\n`;
+    await fs.appendFile(flagFile, message, 'utf-8');
+  } catch (err) {
+    // Silenciosamente ignorar erros ao criar flag
+  }
+};
 
 async function fireSaleConsumedWebhook(data, log) {
   const baseUrl = process.env.INTEGRAHUB_BASE_URL;
@@ -62,9 +76,16 @@ export async function ingestSale(request, reply) {
   try {
     const auth = await authenticate(request);
     if (!auth) {
+      await createUnauthorizedFlag('unknown', request.url);
+      request.log.warn({ 
+        path: request.url,
+        method: request.method,
+        headers: Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('key') || k.toLowerCase().includes('api'))
+      }, 'ingestSale: Auth failed');
+      
       return reply.status(401).send({
         error: 'Unauthorized',
-        message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
+        message: 'Valid API key required. Use Authorization: Bearer {token}, X-Api-Key: {token}, or x-inova-api-key: {token} header'
       });
     }
 
@@ -88,6 +109,12 @@ export async function ingestSale(request, reply) {
     }
 
     if (auth.pharmacy && auth.pharmacy.cnpj !== cnpjEmpresa) {
+      request.log.warn({ 
+        payloadCnpj: cnpjEmpresa,
+        pharmacyCnpj: auth.pharmacy.cnpj,
+        message: 'CNPJ mismatch'
+      }, 'ingestSale: Auth mismatch');
+      
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'API key does not belong to the CNPJ in the payload'
@@ -148,6 +175,7 @@ export async function ingestSale(request, reply) {
       entrega: payload.entrega || {},
       produtos: payload.produtos || [],
       pagamentos: payload.pagamentos || [],
+      vendedor: payload.vendedor || null,
       rawJson: null,
       idempotencyKey,
       payloadUri: objectName,
@@ -164,6 +192,18 @@ export async function ingestSale(request, reply) {
     });
   } catch (error) {
     request.log.error({ error: error.message, stack: error.stack }, 'Error ingesting sale');
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'ingest_sale.error',
+      severity: 'ERROR',
+      cnpj: payload?.cnpjEmpresa || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: { stack: error.stack ? String(error.stack).slice(0, 4000) : null },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -173,16 +213,30 @@ export async function ingestSale(request, reply) {
 
 export async function listPendingSalesHandler(request, reply) {
   try {
+    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    
     const auth = await authenticate(request);
     if (!auth) {
+      await createUnauthorizedFlag(cnpj || 'unknown', 'GET /api/v1/inovafarma/sales/:cnpj/pending');
+      request.log.warn({ 
+        cnpj,
+        path: request.url,
+        headers: Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('key') || k.toLowerCase().includes('api'))
+      }, 'listPendingSales: Auth failed');
+      
       return reply.status(401).send({
         error: 'Unauthorized',
-        message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
+        message: 'Valid API key required. Use Authorization: Bearer {token}, X-Api-Key: {token}, or x-inova-api-key: {token} header'
       });
     }
 
-    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
     if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      request.log.warn({ 
+        cnpj,
+        pharmacyCnpj: auth.pharmacy.cnpj,
+        message: 'CNPJ mismatch'
+      }, 'listPendingSales: Auth mismatch');
+      
       return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
     }
     if (!cnpj) {
@@ -203,6 +257,18 @@ export async function listPendingSalesHandler(request, reply) {
     });
   } catch (error) {
     request.log.error({ error: error.message, stack: error.stack }, 'Error listing pending sales');
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'list_pending_sales.error',
+      severity: 'ERROR',
+      cnpj: request.params?.cnpj || request.query?.cnpj || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: { stack: error.stack ? String(error.stack).slice(0, 4000) : null },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -212,17 +278,33 @@ export async function listPendingSalesHandler(request, reply) {
 
 export async function getSaleByIdHandler(request, reply) {
   try {
+    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    const saleId = request.params.id;
+    
     const auth = await authenticate(request);
     if (!auth) {
+      await createUnauthorizedFlag(cnpj || 'unknown', 'GET /api/v1/inovafarma/sales/:cnpj/:id');
+      request.log.warn({ 
+        cnpj,
+        saleId,
+        path: request.url,
+        headers: Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('key') || k.toLowerCase().includes('api'))
+      }, 'getSaleById: Auth failed');
+      
       return reply.status(401).send({
         error: 'Unauthorized',
-        message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
+        message: 'Valid API key required. Use Authorization: Bearer {token}, X-Api-Key: {token}, or x-inova-api-key: {token} header'
       });
     }
 
-    const saleId = request.params.id;
-    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
     if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      request.log.warn({ 
+        cnpj,
+        pharmacyCnpj: auth.pharmacy.cnpj,
+        saleId,
+        message: 'CNPJ mismatch'
+      }, 'getSaleById: Auth mismatch');
+      
       return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
     }
     if (!cnpj) {
@@ -252,9 +334,29 @@ export async function getSaleByIdHandler(request, reply) {
       payload = JSON.parse(buffer);
     }
 
+    if (sale.status === 'PENDING') {
+      const updated = await consumeSaleByCnpj(saleId, cnpj, 'inovafarma-auto', 'CONSUMED');
+      if (updated?.status === 'CONSUMED') {
+        fireSaleConsumedWebhook(updated, request.log);
+        request.log.info({ saleId, cnpj }, 'Sale auto-consumed on GET');
+      }
+    }
+
     return reply.send(payload || {});
   } catch (error) {
     request.log.error({ error: error.message, stack: error.stack }, 'Error fetching sale by id');
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'get_sale_by_id.error',
+      severity: 'ERROR',
+      cnpj: request.params?.cnpj || request.query?.cnpj || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: { stack: error.stack ? String(error.stack).slice(0, 4000) : null },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -264,16 +366,29 @@ export async function getSaleByIdHandler(request, reply) {
 
 export async function listConsumedSalesHandler(request, reply) {
   try {
+    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
+    
     const auth = await authenticate(request);
     if (!auth) {
+      request.log.warn({ 
+        cnpj,
+        path: request.url,
+        headers: Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('key') || k.toLowerCase().includes('api'))
+      }, 'listConsumedSales: Auth failed');
+      
       return reply.status(401).send({
         error: 'Unauthorized',
-        message: 'Valid API key required. Use Authorization: Bearer {token} or X-Api-Key: {token}'
+        message: 'Valid API key required. Use Authorization: Bearer {token}, X-Api-Key: {token}, or x-inova-api-key: {token} header'
       });
     }
 
-    const cnpj = normalizeString(request.params.cnpj || request.query.cnpj);
     if (auth.pharmacy && auth.pharmacy.cnpj !== cnpj) {
+      request.log.warn({ 
+        cnpj,
+        pharmacyCnpj: auth.pharmacy.cnpj,
+        message: 'CNPJ mismatch'
+      }, 'listConsumedSales: Auth mismatch');
+      
       return reply.status(403).send({ error: 'Forbidden', message: 'API key does not belong to the requested CNPJ' });
     }
     if (!cnpj) {
@@ -306,6 +421,7 @@ export async function listConsumedSalesHandler(request, reply) {
         tipo_ecommerce: row.tipo_ecommerce,
         produtos: row.produtos,
         pagamentos: row.pagamentos,
+        vendedor: row.vendedor,
         consumed_at: row.consumed_at,
         consumed_by: row.consumed_by,
         created_at: row.created_at,
@@ -313,6 +429,18 @@ export async function listConsumedSalesHandler(request, reply) {
     });
   } catch (error) {
     request.log.error({ error: error.message, stack: error.stack }, 'Error listing consumed sales');
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'list_consumed_sales.error',
+      severity: 'ERROR',
+      cnpj: request.params?.cnpj || request.query?.cnpj || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: { stack: error.stack ? String(error.stack).slice(0, 4000) : null },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -375,6 +503,18 @@ export async function consumeSaleHandler(request, reply) {
     });
   } catch (error) {
     request.log.error({ error: error.message, stack: error.stack }, 'Error consuming sale');
+    await persistErrorLog({
+      source: 'api_request',
+      event: 'consume_sale.error',
+      severity: 'ERROR',
+      cnpj: request.params?.cnpj || request.query?.cnpj || null,
+      errorMessage: error.message,
+      errorCode: error.code || null,
+      errorContext: { stack: error.stack ? String(error.stack).slice(0, 4000) : null },
+      requestPath: request.url,
+      requestMethod: request.method,
+      httpStatus: 500,
+    });
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
