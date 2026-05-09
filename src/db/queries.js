@@ -76,6 +76,7 @@ export async function createSale({
   entrega,
   produtos,
   pagamentos,
+  vendedor,
   rawJson,
   idempotencyKey,
   payloadUri,
@@ -93,13 +94,14 @@ export async function createSale({
       entrega,
       produtos,
       pagamentos,
+      vendedor,
       raw_json,
       idempotency_key,
       payload_uri,
       payload_checksum,
       payload_size
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11, $12, $13, $14
+      $1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12, $13, $14, $15
     )
     ON CONFLICT (pharmacy_id, codigo_venda_online)
     DO UPDATE SET
@@ -109,6 +111,7 @@ export async function createSale({
       entrega = EXCLUDED.entrega,
       produtos = EXCLUDED.produtos,
       pagamentos = EXCLUDED.pagamentos,
+      vendedor = EXCLUDED.vendedor,
       raw_json = COALESCE(EXCLUDED.raw_json, sales.raw_json),
       idempotency_key = COALESCE(EXCLUDED.idempotency_key, sales.idempotency_key),
       payload_uri = COALESCE(EXCLUDED.payload_uri, sales.payload_uri),
@@ -126,6 +129,7 @@ export async function createSale({
       JSON.stringify(entrega || {}),
       JSON.stringify(produtos || []),
       JSON.stringify(pagamentos || []),
+      vendedor ? JSON.stringify(vendedor) : null,
       rawJson ? JSON.stringify(rawJson) : null,
       idempotencyKey || null,
       payloadUri || null,
@@ -196,6 +200,7 @@ export async function listConsumedSalesByCnpj(cnpj, { dateFrom, dateTo, limit = 
         tipo_ecommerce,
         produtos,
         pagamentos,
+        vendedor,
         consumed_at,
         consumed_by,
         created_at
