@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntegraHub · Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #0d0f18;
+      --surface:      #141824;
+      --surface2:     #1a1e2e;
+      --border:       #232638;
+      --border2:      #2d3250;
+      --text:         #e2e8f0;
+      --muted:        #7a84a0;
+      --dim:          #454d6a;
+      --green:        #4ade80;
+      --green-bg:     rgba(74,222,128,.13);
+      --yellow:       #fbbf24;
+      --yellow-bg:    rgba(251,191,36,.13);
+      --red:          #f87171;
+      --red-bg:       rgba(248,113,113,.13);
+      --blue:         #60a5fa;
+      --blue-bg:      rgba(96,165,250,.13);
+      --purple:       #c084fc;
+      --purple-bg:    rgba(192,132,252,.13);
+      --orange:       #fb923c;
+      --orange-bg:    rgba(251,146,60,.13);
+      --radius:       6px;
+      --mono:         'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LOGIN ─────────────────────────────────────────────── */
+    #login {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,.09) 0%, transparent 60%), var(--bg);
+    }
+
+    .login-card {
+      width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 32px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+    .brand-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .login-card h2  { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .login-card > p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+
+    .field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus { border-color: var(--blue); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--blue);
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover    { opacity: .88; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+    .login-error {
+      display: none;
+      margin-top: 14px;
+      background: var(--red-bg);
+      border: 1px solid rgba(248,113,113,.3);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-size: 12px;
+      color: var(--red);
+    }
+
+    /* ── APP SHELL ─────────────────────────────────────────── */
+    #app {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── TOPBAR ─────────────────────────────────────────────── */
+    #topbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      height: 50px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tb-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      white-space: nowrap;
+    }
+
+    .tb-sep   { color: var(--border2); font-size: 18px; font-weight: 300; }
+    .tb-title { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+    .conn-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all .2s;
+    }
+    .conn-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background .2s;
+    }
+    .conn-pill.live    { color: var(--green);  border-color: rgba(74,222,128,.35);  background: var(--green-bg);  }
+    .conn-pill.live .conn-dot  { background: var(--green);  box-shadow: 0 0 5px var(--green); animation: blink 2s infinite; }
+    .conn-pill.warn    { color: var(--yellow); border-color: rgba(251,191,36,.35);  background: var(--yellow-bg); }
+    .conn-pill.warn .conn-dot  { background: var(--yellow); }
+    .conn-pill.err     { color: var(--red);    border-color: rgba(248,113,113,.35); background: var(--red-bg);    }
+    .conn-pill.err .conn-dot   { background: var(--red); }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    .spacer { flex: 1; }
+
+    .tb-count { font-size: 11px; color: var(--dim); }
+
+    .btn-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 5px 10px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover         { border-color: var(--blue); color: var(--blue); }
+    .btn-sm.paused        { background: var(--red-bg); border-color: rgba(248,113,113,.4); color: var(--red); }
+    .btn-sm.paused:hover  { border-color: var(--red); }
+
+    /* ── STATS ─────────────────────────────────────────────── */
+    #stats {
+      flex-shrink: 0;
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat {
+      flex: 1;
+      background: var(--surface);
+      padding: 13px 18px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .c-green  { color: var(--green);  }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red);    }
+    .c-blue   { color: var(--blue);   }
+
+    /* ── QUICK FILTERS ──────────────────────────────────────── */
+    #quick-filters {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .qf-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--dim); margin-right: 4px; }
+
+    .btn-qf {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 3px 10px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .btn-qf:hover         { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+    .btn-qf.active        { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+    .btn-qf.active-red    { border-color: var(--red);  color: var(--red);  background: var(--red-bg);  }
+    .btn-qf.active-yellow { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-bg); }
+
+    /* ── FILTERS ─────────────────────────────────────────────── */
+    #filters {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .f-label { font-size: 11px; color: var(--muted); }
+
+    .f-select, .f-input {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 5px 9px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .f-select:focus, .f-input:focus { border-color: var(--blue); }
+    .f-input::placeholder { color: var(--dim); }
+
+    .f-select {
+      appearance: none;
+      padding-right: 22px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%237a84a0' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+      cursor: pointer;
+    }
+
+    .btn-reset {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: var(--radius);
+      transition: color .15s;
+    }
+    .btn-reset:hover { color: var(--text); }
+
+    /* ── TABLE ─────────────────────────────────────────────── */
+    #table-wrap {
+      flex: 1;
+      overflow: auto;
+    }
+
+    #table-wrap::-webkit-scrollbar       { width: 6px; height: 6px; }
+    #table-wrap::-webkit-scrollbar-track { background: transparent; }
+    #table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead { position: sticky; top: 0; z-index: 10; }
+
+    thead th {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--dim);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .1s;
+    }
+    tbody tr:hover            { background: var(--surface2); }
+    tbody tr.row-new          { animation: flashIn .5s ease forwards; }
+    tbody tr.row-4xx:hover    { background: rgba(251,191,36,.05); }
+    tbody tr.row-5xx:hover    { background: rgba(248,113,113,.05); }
+
+    @keyframes flashIn {
+      from { background: rgba(99,102,241,.18); }
+      to   { background: transparent; }
+    }
+
+    td {
+      padding: 8px 12px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .td-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.6;
+    }
+
+    .m-GET    { background: var(--blue-bg);   color: var(--blue);   }
+    .m-POST   { background: var(--green-bg);  color: var(--green);  }
+    .m-PUT    { background: var(--orange-bg); color: var(--orange); }
+    .m-PATCH  { background: var(--purple-bg); color: var(--purple); }
+    .m-DELETE { background: var(--red-bg);    color: var(--red);    }
+    .m-HEAD, .m-OPTIONS { background: rgba(60,60,80,.3); color: var(--muted); }
+
+    .s-2xx { background: var(--green-bg);  color: var(--green);  }
+    .s-3xx { background: var(--blue-bg);   color: var(--blue);   }
+    .s-4xx { background: var(--yellow-bg); color: var(--yellow); }
+    .s-5xx { background: var(--red-bg);    color: var(--red);    }
+    .s-0   { background: rgba(60,60,80,.3); color: var(--muted); }
+
+    .td-path {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .td-path .route-hint {
+      color: var(--dim);
+      margin-left: 4px;
+      font-size: 10px;
+    }
+
+    .td-ip, .td-cnpj {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .lat-wrap { display: flex; align-items: center; gap: 7px; min-width: 90px; }
+    .lat-val  { font-family: var(--mono); font-size: 11px; min-width: 48px; text-align: right; }
+    .lat-bg   { flex: 1; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+    .lat-bar  { height: 100%; border-radius: 2px; }
+
+    .lc-fast      { color: var(--green);  }
+    .lc-ok        { color: var(--yellow); }
+    .lc-slow      { color: var(--orange); }
+    .lc-very-slow { color: var(--red);    }
+    .lb-fast      { background: var(--green);  }
+    .lb-ok        { background: var(--yellow); }
+    .lb-slow      { background: var(--orange); }
+    .lb-very-slow { background: var(--red);    }
+
+    .td-size { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--dim);
+    }
+    .empty-state p { font-size: 13px; margin-top: 10px; }
+
+    /* ── DETAIL PANEL ──────────────────────────────────────── */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 99;
+    }
+    #overlay.show { display: block; }
+
+    #detail {
+      position: fixed;
+      top: 0; right: 0;
+      width: 520px;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      transform: translateX(100%);
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+    #detail.open { transform: translateX(0); }
+
+    .detail-head {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-head h3 {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color .15s;
+    }
+    .btn-close:hover { color: var(--text); }
+
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+    }
+    .detail-body::-webkit-scrollbar       { width: 4px; }
+    .detail-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .d-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .d-row:last-of-type { border-bottom: none; }
+
+    .d-key {
+      min-width: 110px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--dim);
+      padding-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .d-val {
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .d-section { margin-top: 16px; }
+
+    .d-section-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--dim);
+      padding: 8px 0 7px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .d-section-hd:hover { color: var(--muted); }
+
+    .d-section-bd { display: block; }
+    .d-section-bd.collapsed { display: none; }
+
+    pre.json {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.75;
+      color: var(--muted);
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 8px;
+    }
+
+    .jk  { color: var(--blue);   }
+    .jv  { color: var(--text);   }
+    .js  { color: var(--green);  }
+    .jn  { color: var(--orange); }
+    .jb  { color: var(--purple); }
+    .jnl { color: var(--dim);    }
+
+    .d-loading { text-align: center; padding: 40px; color: var(--dim); font-size: 12px; }
+    .d-error   { text-align: center; padding: 40px; color: var(--red);  font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <rect width="34" height="34" rx="9" fill="#3b82f6" fill-opacity=".15"/>
+        <path d="M9 11h16M9 17h11M9 23h14" stroke="#60a5fa" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="26" cy="23" r="4.5" fill="#4ade80" fill-opacity=".9"/>
+      </svg>
+      <div>
+        <div class="brand-name">IntegraHub</div>
+        <div class="brand-sub">Request Monitor</div>
+      </div>
+    </div>
+    <h2>Acessar o painel</h2>
+    <p>Insira a chave de admin para monitorar todas as requisições em tempo real.</p>
+    <div class="field">
+      <label>Admin API Key</label>
+      <input id="login-key" type="password" placeholder="••••••••••••••••••••" autocomplete="off">
+    </div>
+    <button id="login-btn" class="btn-primary">Conectar</button>
+    <div id="login-err" class="login-error">Chave inválida ou sem permissão.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-brand">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none">
+        <rect width="34" height="34" rx="9" fill="#3b82f6" fill-opacity=".2"/>
+        <path d="M9 11h16M9 17h11M9 23h14" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="26" cy="23" r="4.5" fill="#4ade80"/>
+      </svg>
+      IntegraHub
+    </div>
+    <span class="tb-sep">|</span>
+    <span class="tb-title">Monitor de Requisições</span>
+
+    <div id="conn-pill" class="conn-pill warn">
+      <span class="conn-dot"></span>
+      <span id="conn-label">Conectando…</span>
+    </div>
+
+    <div class="spacer"></div>
+    <span id="tb-count" class="tb-count">0 registros</span>
+
+    <button id="btn-pause" class="btn-sm">
+      <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
+        <rect x="0" y="0" width="3.5" height="12" rx="1"/>
+        <rect x="6.5" y="0" width="3.5" height="12" rx="1"/>
+      </svg>
+      Pausar
+    </button>
+    <button id="btn-clear" class="btn-sm">Limpar</button>
+    <button id="btn-logout" class="btn-sm">Sair</button>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats">
+    <div class="stat"><div class="stat-label">Total</div>     <div id="s-total" class="stat-val">0</div></div>
+    <div class="stat"><div class="stat-label">2xx Sucesso</div><div id="s-2xx"   class="stat-val c-green">0</div></div>
+    <div class="stat"><div class="stat-label">4xx Cliente</div><div id="s-4xx"   class="stat-val c-yellow">0</div></div>
+    <div class="stat"><div class="stat-label">5xx Servidor</div><div id="s-5xx"  class="stat-val c-red">0</div></div>
+    <div class="stat"><div class="stat-label">Lat. Média</div> <div id="s-lat"   class="stat-val c-blue">—</div></div>
+  </div>
+
+  <!-- QUICK FILTERS -->
+  <div id="quick-filters">
+    <span class="qf-label">Atalhos:</span>
+    <button class="btn-qf" data-qf="ingest" title="POST /v1/inovafarma/products">
+      <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor"><path d="M0 0h9v2H0zM0 3.5h6v2H0zM0 7h7.5v2H0z"/></svg>
+      Ingest Produtos
+    </button>
+    <button class="btn-qf" data-qf="erros5xx" title="Apenas erros 5xx (servidor)">
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+      Erros 5xx
+    </button>
+    <button class="btn-qf" data-qf="erros4xx" title="Apenas erros 4xx (cliente/auth)">
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+      Erros 4xx
+    </button>
+    <button class="btn-qf" data-qf="all" title="Mostrar tudo">Todos</button>
+  </div>
+
+  <!-- FILTERS -->
+  <div id="filters">
+    <span class="f-label">Filtrar:</span>
+    <select id="f-method" class="f-select">
+      <option value="">Método</option>
+      <option>GET</option><option>POST</option><option>PUT</option>
+      <option>PATCH</option><option>DELETE</option>
+    </select>
+    <select id="f-status" class="f-select">
+      <option value="">Status</option>
+      <option value="2">2xx Sucesso</option>
+      <option value="4">4xx Erro cliente</option>
+      <option value="5">5xx Erro servidor</option>
+    </select>
+    <input id="f-path"  class="f-input" placeholder="Filtrar por path…"  style="width:210px">
+    <input id="f-cnpj"  class="f-input" placeholder="Filtrar por CNPJ…"  style="width:165px">
+    <button id="btn-reset" class="btn-reset">Limpar filtros</button>
+  </div>
+
+  <!-- TABLE -->
+  <div id="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:100px">Horário</th>
+          <th style="width:72px">Método</th>
+          <th>Path</th>
+          <th style="width:70px">Status</th>
+          <th style="width:130px">Latência</th>
+          <th style="width:130px">IP</th>
+          <th style="width:145px">CNPJ</th>
+          <th style="width:80px">Resp.</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty-state">
+      <svg width="42" height="42" viewBox="0 0 42 42" fill="none" opacity=".25">
+        <rect x="5" y="9" width="32" height="28" rx="4" stroke="#7a84a0" stroke-width="2"/>
+        <path d="M13 17h16M13 23h10M13 29h8" stroke="#7a84a0" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>Aguardando requisições…</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- OVERLAY + DETAIL PANEL -->
+<div id="overlay"></div>
+<div id="detail">
+  <div class="detail-head">
+    <h3 id="detail-title">Detalhes</h3>
+    <button id="btn-close" class="btn-close" title="Fechar">✕</button>
+  </div>
+  <div id="detail-body" class="detail-body">
+    <div class="d-loading">Carregando…</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── CONFIG ────────────────────────────────────────────────────
+const MAX_ROWS = 1000;
+
+// ── STATE ─────────────────────────────────────────────────────
+let apiKey   = '';
+let paused   = false;
+let rows     = [];
+let ctrl     = null;
+let rtimer   = null;
+let latSum   = 0;
+let latCount = 0;
+const st = { total: 0, s2: 0, s4: 0, s5: 0 };
+
+// Filters
+let fMethod = '', fStatus = '', fPath = '', fCnpj = '';
+
+// ── DOM ───────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const loginEl  = $('login');
+const appEl    = $('app');
+const loginKey = $('login-key');
+const loginBtn = $('login-btn');
+const loginErr = $('login-err');
+const connPill = $('conn-pill');
+const connLbl  = $('conn-label');
+const tbody    = $('tbody');
+const emptyEl  = $('empty');
+const tbCount  = $('tb-count');
+const detailEl = $('detail');
+const overlay  = $('overlay');
+const detBody  = $('detail-body');
+const detTitle = $('detail-title');
+const btnPause = $('btn-pause');
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('pt-BR');
+}
+
+function fmtBytes(n) {
+  if (n == null || n === 0) return '—';
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(1) + ' MB';
+}
+
+function scClass(code) {
+  if (!code) return '0';
+  const c = String(code)[0];
+  return (c === '2' || c === '3' || c === '4' || c === '5') ? c + 'xx' : '0';
+}
+
+function latClass(ms) {
+  if (ms == null) return '';
+  if (ms < 50)   return 'fast';
+  if (ms < 200)  return 'ok';
+  if (ms < 1000) return 'slow';
+  return 'very-slow';
+}
+
+function latBarW(ms) {
+  if (!ms) return 0;
+  return Math.min(100, (Math.log(ms + 1) / Math.log(2001)) * 100);
+}
+
+// ── JSON RENDERER ─────────────────────────────────────────────
+function renderJson(v, depth) {
+  depth = depth || 0;
+  if (v === null)                  return '<span class="jnl">null</span>';
+  if (typeof v === 'boolean')      return '<span class="jb">' + v + '</span>';
+  if (typeof v === 'number')       return '<span class="jn">' + v + '</span>';
+  if (typeof v === 'string')       return '<span class="js">"' + esc(v) + '"</span>';
+  if (Array.isArray(v)) {
+    if (!v.length) return '[]';
+    const pad  = '  '.repeat(depth + 1);
+    const pad0 = '  '.repeat(depth);
+    const items = v.map(item => pad + renderJson(item, depth + 1));
+    return '[\n' + items.join(',\n') + '\n' + pad0 + ']';
+  }
+  if (typeof v === 'object') {
+    const keys = Object.keys(v);
+    if (!keys.length) return '{}';
+    const pad  = '  '.repeat(depth + 1);
+    const pad0 = '  '.repeat(depth);
+    const items = keys.map(k =>
+      pad + '<span class="jk">"' + esc(k) + '"</span>: ' + renderJson(v[k], depth + 1)
+    );
+    return '{\n' + items.join(',\n') + '\n' + pad0 + '}';
+  }
+  return esc(String(v));
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function addStat(row) {
+  st.total++;
+  const c = scClass(row.status_code);
+  if (c === '2xx') st.s2++;
+  else if (c === '4xx') st.s4++;
+  else if (c === '5xx') st.s5++;
+  if (row.latency_ms != null) { latSum += row.latency_ms; latCount++; }
+  flushStats();
+}
+
+function flushStats() {
+  $('s-total').textContent = st.total.toLocaleString('pt-BR');
+  $('s-2xx').textContent   = st.s2.toLocaleString('pt-BR');
+  $('s-4xx').textContent   = st.s4.toLocaleString('pt-BR');
+  $('s-5xx').textContent   = st.s5.toLocaleString('pt-BR');
+  $('s-lat').textContent   = latCount ? Math.round(latSum / latCount) + 'ms' : '—';
+}
+
+function resetStats() {
+  st.total = st.s2 = st.s4 = st.s5 = 0;
+  latSum = latCount = 0;
+  flushStats();
+}
+
+// ── FILTER MATCH ──────────────────────────────────────────────
+function matches(row) {
+  if (fMethod && row.method !== fMethod) return false;
+  if (fStatus && String(row.status_code || '')[0] !== fStatus) return false;
+  if (fPath   && !(row.path  || '').toLowerCase().includes(fPath.toLowerCase())) return false;
+  if (fCnpj   && !(row.cnpj  || '').includes(fCnpj)) return false;
+  return true;
+}
+
+// ── RENDER ROW ────────────────────────────────────────────────
+function makeRow(row, prepend, animate) {
+  if (!matches(row)) return;
+
+  const sc = scClass(row.status_code);
+  const lc = latClass(row.latency_ms);
+  const lw = latBarW(row.latency_ms);
+
+  const tr = document.createElement('tr');
+  if (animate) tr.className = 'row-new';
+  if (sc === '4xx') tr.classList.add('row-4xx');
+  if (sc === '5xx') tr.classList.add('row-5xx');
+  tr.dataset.id = row.id;
+
+  const routeHint = row.route && row.route !== row.path
+    ? '<span class="route-hint">(' + esc(row.route) + ')</span>' : '';
+
+  tr.innerHTML =
+    '<td class="td-time" title="' + esc(fmtDateTime(row.occurred_at)) + '">'
+      + esc(fmtTime(row.occurred_at)) + '</td>' +
+    '<td><span class="badge m-' + esc(row.method || 'GET') + '">'
+      + esc(row.method || '—') + '</span></td>' +
+    '<td class="td-path" title="' + esc(row.path || '') + '">'
+      + esc(row.path || '—') + routeHint + '</td>' +
+    '<td><span class="badge s-' + esc(sc) + '">'
+      + esc(String(row.status_code || '—')) + '</span></td>' +
+    '<td><div class="lat-wrap">'
+      + '<span class="lat-val lc-' + esc(lc) + '">'
+        + (row.latency_ms != null ? row.latency_ms + 'ms' : '—') + '</span>'
+      + '<div class="lat-bg"><div class="lat-bar lb-' + esc(lc)
+        + '" style="width:' + lw + '%"></div></div>'
+    + '</div></td>' +
+    '<td class="td-ip">'   + esc(row.ip   || '—') + '</td>' +
+    '<td class="td-cnpj">' + esc(row.cnpj || '—') + '</td>' +
+    '<td class="td-size">' + esc(fmtBytes(row.res_size)) + '</td>';
+
+  tr.addEventListener('click', () => openDetail(row.id, row));
+
+  if (prepend) tbody.insertBefore(tr, tbody.firstChild);
+  else tbody.appendChild(tr);
+
+  emptyEl.style.display = 'none';
+}
+
+function rebuildTable() {
+  tbody.innerHTML = '';
+  const visible = rows.filter(matches);
+  if (visible.length === 0) {
+    emptyEl.style.display = '';
+  } else {
+    emptyEl.style.display = 'none';
+    visible.forEach(r => makeRow(r, false, false));
+  }
+  updateCount();
+}
+
+function updateCount() {
+  const n = tbody.rows.length;
+  tbCount.textContent = n.toLocaleString('pt-BR') + ' registro' + (n !== 1 ? 's' : '');
+}
+
+function clearTable() {
+  rows = [];
+  tbody.innerHTML = '';
+  emptyEl.style.display = '';
+  tbCount.textContent = '0 registros';
+  resetStats();
+}
+
+// ── INCOMING REQUEST ──────────────────────────────────────────
+function onRequest(row) {
+  if (paused) return;
+  rows.unshift(row);
+  if (rows.length > MAX_ROWS) rows.pop();
+  addStat(row);
+  makeRow(row, true, true);
+  // Trim DOM
+  while (tbody.rows.length > MAX_ROWS) {
+    tbody.deleteRow(tbody.rows.length - 1);
+  }
+  updateCount();
+}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────
+async function openDetail(id, partial) {
+  detailEl.classList.add('open');
+  overlay.classList.add('show');
+  detTitle.textContent = '#' + id + ' · ' + (partial.method || '') + ' ' + (partial.path || '');
+  detBody.innerHTML = '<div class="d-loading">Carregando…</div>';
+
+  try {
+    const r = await fetch('/admin/logs/' + id, { headers: { 'x-admin-api-key': apiKey } });
+    if (!r.ok) throw new Error(r.status);
+    renderDetail(await r.json());
+  } catch {
+    detBody.innerHTML = '<div class="d-error">Erro ao carregar detalhes.</div>';
+  }
+}
+
+function closeDetail() {
+  detailEl.classList.remove('open');
+  overlay.classList.remove('show');
+}
+
+function field(label, value) {
+  if (value == null || value === '') return '';
+  return '<div class="d-row">'
+    + '<span class="d-key">' + esc(label) + '</span>'
+    + '<span class="d-val">' + esc(String(value)) + '</span>'
+    + '</div>';
+}
+
+function section(title, data) {
+  if (!data || (typeof data === 'object' && !Object.keys(data).length)) return '';
+  const id = '_s' + Math.random().toString(36).slice(2, 8);
+  return '<div class="d-section">'
+    + '<div class="d-section-hd" onclick="toggleSec(\'' + id + '\')">'
+      + esc(title) + '<span id="' + id + 'ico">▼</span>'
+    + '</div>'
+    + '<div id="' + id + '" class="d-section-bd">'
+      + '<pre class="json">' + renderJson(data, 0) + '</pre>'
+    + '</div>'
+    + '</div>';
+}
+
+window.toggleSec = function(id) {
+  const el = $(id), ico = $(id + 'ico');
+  const hidden = el.classList.toggle('collapsed');
+  ico.textContent = hidden ? '►' : '▼';
+};
+
+function renderDetail(log) {
+  const sc = scClass(log.status_code);
+  let html =
+    field('ID',         log.id) +
+    field('Request ID', log.request_id) +
+    field('Horário',    fmtDateTime(log.occurred_at)) +
+    field('Método',     log.method) +
+    field('Path',       log.path) +
+    field('Route',      log.route !== log.path ? log.route : null) +
+    field('Status',     log.status_code) +
+    field('Latência',   log.latency_ms != null ? log.latency_ms + ' ms' : null) +
+    field('IP',         log.ip) +
+    field('User-Agent', log.user_agent) +
+    field('CNPJ',       log.cnpj) +
+    field('Req. Size',  log.req_body_size != null ? fmtBytes(log.req_body_size) : null) +
+    field('Res. Size',  log.res_size      != null ? fmtBytes(log.res_size)      : null) +
+    field('Erro',       log.error_message);
+
+  html += section('Headers da Requisição', log.req_headers);
+  html += section('Query Params',          log.query_params);
+  html += section('Corpo da Resposta',     log.res_body);
+
+  detBody.innerHTML = html || '<div class="d-loading">Sem dados.</div>';
+}
+
+// ── SSE (via fetch — suporta headers customizados) ────────────
+function setConn(state, label) {
+  connPill.className = 'conn-pill ' + state;
+  connLbl.textContent = label;
+}
+
+async function loadHistory(pathFilter) {
+  try {
+    const qs = pathFilter ? '?limit=200&path=' + encodeURIComponent(pathFilter) : '?limit=100';
+    const r = await fetch('/admin/logs' + qs, { headers: { 'x-admin-api-key': apiKey } });
+    if (!r.ok) return;
+    const { logs } = await r.json();
+    for (const row of logs) {
+      rows.push(row);
+      addStat(row);
+      makeRow(row, false, false);
+    }
+    updateCount();
+  } catch { /* silêncio */ }
+}
+
+async function startStream() {
+  setConn('warn', 'Conectando…');
+  if (ctrl) ctrl.abort();
+  ctrl = new AbortController();
+
+  try {
+    const r = await fetch('/admin/logs/stream', {
+      headers: { 'x-admin-api-key': apiKey },
+      signal: ctrl.signal,
+    });
+
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) throw new Error(r.status);
+
+    setConn('live', 'Ao vivo');
+
+    const reader  = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop(); // incomplete last line
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try { onRequest(JSON.parse(line.slice(6))); } catch { /* parse error ignored */ }
+      }
+    }
+
+    setConn('warn', 'Reconectando…');
+    rtimer = setTimeout(startStream, 3000);
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    setConn('err', 'Desconectado');
+    rtimer = setTimeout(startStream, 3000);
+  }
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function login(key) {
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Conectando…';
+  loginErr.style.display = 'none';
+
+  try {
+    const r = await fetch('/admin/logs?limit=1', { headers: { 'x-admin-api-key': key } });
+
+    if (r.status === 401) {
+      loginErr.style.display = 'block';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Conectar';
+      return;
+    }
+    if (!r.ok) throw new Error(r.status);
+
+    apiKey = key;
+    sessionStorage.setItem('ih_key', key);
+
+    loginEl.style.display  = 'none';
+    appEl.style.display     = 'flex';
+
+    await loadHistory();
+    startStream();
+  } catch {
+    loginErr.textContent    = 'Erro de conexão. Tente novamente.';
+    loginErr.style.display  = 'block';
+    loginBtn.disabled       = false;
+    loginBtn.textContent    = 'Conectar';
+  }
+}
+
+function logout() {
+  if (ctrl)   ctrl.abort();
+  if (rtimer) clearTimeout(rtimer);
+  apiKey = '';
+  sessionStorage.removeItem('ih_key');
+  clearTable();
+  closeDetail();
+  appEl.style.display  = 'none';
+  loginEl.style.display = 'flex';
+  loginKey.value = '';
+  loginBtn.disabled = false;
+  loginBtn.textContent = 'Conectar';
+}
+
+// ── EVENTS ────────────────────────────────────────────────────
+loginBtn.addEventListener('click', () => {
+  const k = loginKey.value.trim();
+  if (k) login(k);
+});
+
+loginKey.addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
+
+btnPause.addEventListener('click', () => {
+  paused = !paused;
+  if (paused) {
+    btnPause.classList.add('paused');
+    btnPause.innerHTML =
+      '<svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor"><path d="M0 0l10 6-10 6z"/></svg> Retomar';
+  } else {
+    btnPause.classList.remove('paused');
+    btnPause.innerHTML =
+      '<svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">'
+      + '<rect x="0" y="0" width="3.5" height="12" rx="1"/>'
+      + '<rect x="6.5" y="0" width="3.5" height="12" rx="1"/>'
+      + '</svg> Pausar';
+  }
+});
+
+$('btn-clear').addEventListener('click', clearTable);
+$('btn-logout').addEventListener('click', logout);
+$('btn-close').addEventListener('click', closeDetail);
+overlay.addEventListener('click', closeDetail);
+
+['f-method','f-status','f-path','f-cnpj'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    fMethod = $('f-method').value;
+    fStatus = $('f-status').value;
+    fPath   = $('f-path').value;
+    fCnpj   = $('f-cnpj').value;
+    syncQuickFilterButtons();
+    rebuildTable();
+  });
+});
+
+$('btn-reset').addEventListener('click', async () => {
+  $('f-method').value = $('f-status').value = $('f-path').value = $('f-cnpj').value = '';
+  fMethod = fStatus = fPath = fCnpj = '';
+  syncQuickFilterButtons();
+  clearTable();
+  await loadHistory();
+});
+
+async function applyQuickFilter(name) {
+  $('f-method').value = $('f-status').value = $('f-path').value = $('f-cnpj').value = '';
+  fMethod = ''; fStatus = ''; fPath = ''; fCnpj = '';
+
+  if (name === 'ingest') {
+    fPath = '/v1/inovafarma/products';
+    $('f-path').value = fPath;
+    // Reload history filtered to this path so polling noise doesn't hide results
+    clearTable();
+    await loadHistory('/v1/inovafarma/products');
+  } else if (name === 'erros5xx') {
+    fStatus = '5';
+    $('f-status').value = fStatus;
+    rebuildTable();
+  } else if (name === 'erros4xx') {
+    fStatus = '4';
+    $('f-status').value = fStatus;
+    rebuildTable();
+  } else if (name === 'all') {
+    // Reload full unfiltered history
+    clearTable();
+    await loadHistory();
+  }
+  syncQuickFilterButtons();
+}
+
+function syncQuickFilterButtons() {
+  document.querySelectorAll('.btn-qf').forEach(btn => {
+    btn.classList.remove('active', 'active-red', 'active-yellow');
+    const name = btn.dataset.qf;
+    if (name === 'ingest'   && fPath   === '/v1/inovafarma/products') btn.classList.add('active');
+    if (name === 'erros5xx' && fStatus === '5') btn.classList.add('active-red');
+    if (name === 'erros4xx' && fStatus === '4') btn.classList.add('active-yellow');
+    if (name === 'all'      && !fPath && !fStatus && !fMethod && !fCnpj) btn.classList.add('active');
+  });
+}
+
+document.querySelectorAll('.btn-qf').forEach(btn => {
+  btn.addEventListener('click', () => applyQuickFilter(btn.dataset.qf));
+});
+
+// ── AUTO-LOGIN ────────────────────────────────────────────────
+const saved = sessionStorage.getItem('ih_key');
+if (saved) { loginKey.value = saved; login(saved); }
+</script>
+</body>
+</html>

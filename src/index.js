@@ -5,7 +5,8 @@ import dotenv from 'dotenv';
 import { ingestProducts } from './api/ingest.js';
 import { getProductsHandler } from './api/products.js';
 import { ingestSale, listPendingSalesHandler, getSaleByIdHandler, consumeSaleHandler, listConsumedSalesHandler } from './api/sales.js';
-import { generatePharmacyApiKeyHandler } from './api/admin.js';
+import { generatePharmacyApiKeyHandler, requestLogsHandler, requestLogByIdHandler, requestLogsStreamHandler, monitorPageHandler } from './api/admin.js';
+import { registerRequestLogger } from './plugins/request-logger.js';
 import { connectProducer, disconnectProducer } from './kafka/producer.js';
 import { ensureBucket } from './storage/client.js';
 import logger from './utils/logger.js';
@@ -28,6 +29,7 @@ await fastify.register(cors, {
   origin: true,
   credentials: true
 });
+registerRequestLogger(fastify);
 
 // Routes
 fastify.post('/v1/inovafarma/products', {
@@ -56,6 +58,12 @@ fastify.post('/api/v1/inovafarma/sales/:cnpj/:id/consume', consumeSaleHandler);
 // Admin: gerenciamento de chaves por farmácia
 fastify.post('/admin/pharmacies/:cnpj/api-key', generatePharmacyApiKeyHandler);
 fastify.post('/admin/pharmacies/api-key', generatePharmacyApiKeyHandler);
+
+// Admin: observabilidade — telemetria de requisições
+fastify.get('/admin/monitor', monitorPageHandler);
+fastify.get('/admin/logs/stream', requestLogsStreamHandler);
+fastify.get('/admin/logs/:id', requestLogByIdHandler);
+fastify.get('/admin/logs', requestLogsHandler);
 
 // Startup
 async function start() {
