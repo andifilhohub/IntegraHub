@@ -2,6 +2,7 @@ import { createConsumer } from '../kafka/consumer.js';
 import { getObject, uploadObject } from '../storage/client.js';
 import { query } from '../db/pool.js';
 import logger from '../utils/logger.js';
+import { persistErrorLog } from '../db/error-log.js';
 import { Kafka } from 'kafkajs';
 
 const CHUNK_SIZE = parseInt(process.env.CHUNK_SIZE || '1000');
@@ -238,9 +239,20 @@ export async function startChunkerWorker() {
             phase
           }, 'Batch retry scheduled');
 
+          await persistErrorLog({
+            source: 'chunker',
+            event: 'chunker.retry',
+            severity: 'WARN',
+            cnpj,
+            batchId,
+            errorMessage,
+            errorCode,
+            errorContext: { ...errorContext, attempts, willRetry: true },
+          });
+
           return;
         }
-        
+
         await query(
           `UPDATE batches
            SET status = $1,
@@ -252,6 +264,17 @@ export async function startChunkerWorker() {
            WHERE batch_id = $5`,
           ['FAILED', errorMessage, errorCode, JSON.stringify({ ...errorContext, attempts, willRetry: false }), batchId]
         );
+
+        await persistErrorLog({
+          source: 'chunker',
+          event: 'chunker.failed',
+          severity: 'ERROR',
+          cnpj,
+          batchId,
+          errorMessage,
+          errorCode,
+          errorContext: { ...errorContext, attempts, willRetry: false },
+        });
       }
     }
   });

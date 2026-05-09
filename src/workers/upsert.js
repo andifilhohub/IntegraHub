@@ -3,6 +3,7 @@ import { bulkUpsertProducts, markInactiveProductsWindow } from '../db/bulk-opera
 import { query } from '../db/pool.js';
 import { getObject } from '../storage/client.js';
 import logger from '../utils/logger.js';
+import { persistErrorLog } from '../db/error-log.js';
 import { Kafka } from 'kafkajs';
 
 const MAX_CHUNK_RETRIES = parseInt(process.env.MAX_CHUNK_RETRIES || '3', 10);
@@ -273,18 +274,30 @@ export async function processChunk(chunkData) {
         maxRetries: MAX_CHUNK_RETRIES
       }, 'Chunk retry scheduled');
 
+      await persistErrorLog({
+        source: 'upsert',
+        event: 'upsert.retry',
+        severity: 'WARN',
+        cnpj,
+        batchId,
+        chunkId,
+        errorMessage,
+        errorCode,
+        errorContext: { ...errorContext, attempts, willRetry: true },
+      });
+
       return;
     }
 
     await query(
-      `UPDATE batches 
+      `UPDATE batches
        SET items_failed = items_failed + $1,
            status = 'PARTIAL_FAIL',
            error_message = $3,
            error_code = $4,
            error_context = $5::jsonb,
            last_error_at = NOW(),
-           updated_at = NOW() 
+           updated_at = NOW()
        WHERE batch_id = $2`,
       [itemsCount, batchId, errorMessage, errorCode, JSON.stringify({ ...errorContext, attempts, willRetry: false })]
     );
@@ -298,6 +311,18 @@ export async function processChunk(chunkData) {
       attempts,
       maxRetries: MAX_CHUNK_RETRIES
     }, 'Chunk failed after max retries');
+
+    await persistErrorLog({
+      source: 'upsert',
+      event: 'upsert.failed',
+      severity: 'ERROR',
+      cnpj,
+      batchId,
+      chunkId,
+      errorMessage,
+      errorCode,
+      errorContext: { ...errorContext, attempts, willRetry: false },
+    });
   }
 }
 
